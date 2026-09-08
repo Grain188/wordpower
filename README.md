@@ -13,11 +13,11 @@
 |---|---|
 | 拍照导入 | 拍照/选图/拖图 → vision 识别词条；**粘贴文本通道**（安卓本地 OCR 结果走文本模型，vision 不可用也能导入）；确认列表（删误识别 / 标「已掌握」跳过）；本地去重 |
 | 生词本 | CEFR×词性×主题 三维分组折叠；左滑 标熟/编辑/删除/回退；点读发音；搜索 |
-| 今日学习 | streak 火焰 + 全勤周徽章；每日目标圆环 + 轻纸屑；Anki 3D 翻卡「先学」→ Boss 战「后考」 |
-| Boss 战 | 选择题闯关；几何 SVG 小怪兽 + 三色血条；答对扣血飘伤害、答错回血加密排期；**答错词才批量 API 生成明日干扰项/例句，答对走本地抽词，全程离线可玩** |
+| 今日学习 | streak 火焰 + 全勤周徽章；每日目标圆环 + 轻纸屑；Anki 3D 翻卡「先学」→ Boss 战「后考」；**到期词按每日目标分批练习（练完一批可继续下一批），翻完一批即算当日打卡** |
+| Boss 战 | 选择题闯关；几何 SVG 小怪兽 + 三色血条；答对扣血飘伤害、答错回血加密排期；**答错当场展示正确释义+例句（可点读）**；答错词才批量 API 生成明日干扰项/例句，答对走本地抽词，全程离线可玩 |
 | 听说 | 回合制语音对话（非实时流）：场景选择 → 到期词 ≤5 注入 prompt；按住/点按麦克风（无 ASR 环境自动提示打字）；目标词黄色高亮、中文翻译折叠、8 轮结算卡（命中数/口语小评/重听整场）；命中词当天 FSRS 加权 |
-| 统计 | GitHub 热力日历、掌握率环形、**本月 API 花费估算** |
-| 我的 | API Key / Worker 切换、语音选择、每日目标、深色模式、**JSON 备份导出/导入** |
+| 统计 | GitHub 热力日历、掌握率环形、**本月 API 花费估算**、**最近口语会话回看（小评 + 重听）** |
+| 我的 | API Key / Worker 切换、**模型名覆盖（视觉/文本）**、**转发口令(可选)**、语音选择、每日目标、深色模式、**JSON 备份**、**云端一键同步（Worker+D1）** |
 
 ---
 
@@ -85,7 +85,7 @@ npm run icons      # 重新生成 PWA 图标（零依赖 PNG 编码器）
 2. 把仓库根目录 **`cf-worker.js`** 的内容粘贴进去（Worker 名随意）；
 3. Deploy 后得到 `https://<你的名称>.workers.dev` —— 填进应用设置即可。
 
-脚本只做三件事：OPTIONS 预检放行、把 `/chat/completions` POST 原样转发到 `api.deepseek.com`、补 CORS 头（约 60 行，含中文注释与安全提醒）。若要防他人盗刷，可在脚本里加一个简单 token 校验。
+脚本职责：OPTIONS 预检放行、把 `/chat/completions` POST 原样转发到 `api.deepseek.com`、补 CORS 头；同一份脚本还带 **可选 `CHAT_TOKEN` 校验**与 **`/sync` 云端同步（配 D1）**，见第十节。
 
 ### 方案 B：同站 Serverless 转发（Vercel 可选，同源无 CORS）
 
@@ -119,11 +119,12 @@ export default async (req) => {
 
 ## 六、模型与省 token（成本相关）
 
-### 模型名（写死，改动只允许在 `src/config.js`）
+### 模型名（默认写死于 `src/config.js`，可在「我的 → API 设置」覆盖）
 - 视觉 OCR/词条提取：`deepseek-v4-flash-vision-exp`
 - 文本（归档/干扰项/口语/摘要/点评）：`deepseek-v4-flash`
 
-> ⚠️ 若你账号下不存在上述模型名，请求会返回 404 → 应用会提示「模型不可用/请核对 src/config.js 与账号开通情况」。拍照不可用时请改用**粘贴文本**通道（本地 OCR → 文本模型），功能不中断。
+> ⚠️ 模型名只是默认值；**账号里实际模型名不同时，在「我的 → API 设置」的「视觉模型/文本模型」框填真实名字并保存即可覆盖**（无需改代码）。若填的名字不存在会 404 → 应用提示「模型不可用」。视觉模型不可用/识别不到词时请用**粘贴文本**通道（本地 OCR → 文本模型），功能不中断。
+> 拍照链路做了容错：模型输出夹带说明文字也能抠出 JSON；仍失败会自动让文本模型整理一次；再不行把原始返回贴出来提示你（不会默默丢词）。
 
 ### 内置的省 token 策略（均可在代码注释中找到）
 1. 单词静态信息（释义/音标/CEFR/例句）随词条永久缓存 IndexedDB，同词永不重复请求；
@@ -153,24 +154,43 @@ export default async (req) => {
 ## 九、测试
 `npm run smoke` 依次运行：数据层（导入/去重/评分/口语加权/打卡/streak）→ API 层（endpoint 切换/token 记账/花费数学/错误语义）→ 图片 OCR 纯函数（EXIF/缩放/归一化）→ Boss 选项构造 → 备份回环。测试基于 fake-indexeddb，不需要浏览器与网络。
 
-## 十、出门随时用：CF Pages 上线 + 云端一键同步（Worker + D1）
+## 十、出门随时用：托管上线 + 云同步 + 一键发布
 
-**Worker（同一份 cf-worker.js 已含两功能：/chat/completions 转发 + /sync 同步）**：
-1. 把新版 `cf-worker.js` 全量粘贴进 Worker → Deploy；
+### 架构：两个域名各司其职
+| 角色 | 内容 | 填在哪里 |
+|---|---|---|
+| **站点托管**（本仓库构建产物） | 手机/电脑打开应用、装主屏、离线复习 | 浏览器地址栏 |
+| **转发 + 同步 Worker**（`cf-worker.js`） | DeepSeek API 转发 + 云端同步 | 「我的 → API 设置 → Worker 地址」 |
+
+> ⚠️ 两者别搞混：**别把页面托管域名填进 API 设置**（它不做转发）；API/云同步只走你配置的那个 Worker。
+
+### A. 应用托管：GitHub + Cloudflare「Workers → 连接 Git」（当前采用，push 即自动部署）
+1. 本仓库已关联 `github.com/<你的用户名>/wordpower`（分支 main）；
+2. Cloudflare：Workers & Pages → 连接 Git 仓库（Workers Builds）→ 构建命令 `npm run build`、产物目录 `dist`；
+3. 之后**每次 push 自动重建上线**，地址形如 `<项目名>.<账号号>.workers.dev`。
+4. **日常发布 = 双击 `publish.bat`**（自动 git add/commit/push → 云端自动重建）；用户端打开新版本时底部浮「有新版本 → 刷新」。
+
+备用托管：Cloudflare Pages / Vercel / Netlify（纯静态：`npm run build` 后传 `dist/`，或连 Git 自动构建，见第四/五节）。
+
+### B. 转发 + 同步 Worker（一次性配置）
+1. 把 `cf-worker.js`（已含 `/chat/completions` 转发 + `/sync/upload|download` 同步）全量粘贴进 Worker → Deploy；
 2. Worker → Settings → **Bindings → D1 database**：新建库（如 `wordpower-sync`），绑定变量名 **`DB`**；
-3. Settings → **Variables and Secrets** → 新增 **Secret `SYNC_TOKEN`**（自己定一串口令）；
-4. 建表（Workers & Pages → D1 → 打开库 → Console，执行一次）：
+3. Settings → **Variables and Secrets**：
+   - `SYNC_TOKEN`（Secret，云同步口令，必配）
+   - `CHAT_TOKEN`（Secret，可选：设了则应用请求须带同串「转发口令」，防陌生人拿你的 Worker 当免费转发器）
+4. 建表一次（Workers & Pages → D1 → 打开库 → Console）：
    `CREATE TABLE IF NOT EXISTS sync(id TEXT PRIMARY KEY, blob TEXT NOT NULL, updated_at INTEGER NOT NULL);`
 
-**App 部署（Cloudflare Pages）**：`npm run build`（或双击 build.bat）→ Workers & Pages → Create → **Pages → Upload assets** → 上传 `dist/` 文件夹 → 得 `https://xxx.pages.dev`（连 Git 则构建命令 `npm run build`、输出目录 `dist`）。
+### C. 每台设备首次使用
+1. 打开站点地址 → 可先装到主屏（PWA）；
+2. 「我的 → API 设置」：填 **Worker 地址**（转发 Worker 那个）；（要用 AI 功能再填 API Key；模型名与你账号不同时在「视觉模型/文本模型」里覆盖；Worker 设了 CHAT_TOKEN 则「转发口令」填一致）
+3. 「我的 → 云端同步」：填 SYNC_TOKEN 口令 → **从云端拉取**词库。
 
-**使用**：电脑/手机各自打开应用 →「我的 → 云端同步」填同一口令 →「上传到云端」存档，换设备点「从云端拉取」恢复。单用户全量快照、最后上传方覆盖；同步口令只存在本机设置里。手机端只查看复习的话，不用填 API Key 也能同步。
-
-### 日常使用流程（建议节奏）
+### D. 日常使用流程（建议节奏）
 1. **导入**：拍照/粘贴文本进词库（出门路上拍一页，回来自动整理好）；
-2. **每天**：今日学习页先翻卡「先学」→ Boss 战「后考」，答错词自动加密排期并预生成明日题；
-3. **开口**：听说板块选话题练 8 轮，命中目标词当天 FSRS 加权；
-4. **同步**：学完随手在「我的 → 云端同步」点一次**上传到云端**；换设备前先上传、到另一台再拉取。
+2. **每天**：今日页按目标分批「翻卡先学 → Boss 后考」，翻完即打卡；答错当场看正确释义/例句，并自动加密排期、预生成明日题；
+3. **开口**：听说板块选话题练约 8 轮，命中目标词当天 FSRS 加权；统计页可回看会话与点评；
+4. **同步**：学完在「我的 → 云端同步」点一次**上传到云端**；换设备/出门前先上传、到另一台再拉取（全量快照、最后上传方覆盖）。
 
-### 更新 App 新版本
-本地改完代码 → `npm run build`（或双击 build.bat）→ Cloudflare Pages 里重新 **Upload assets** 上传新的 `dist/`（连了 Git 则直接推仓库自动重建）。用户端下次打开会自动拿到新版本（Service Worker 预缓存按 hash 更新）；若旧页面没变，刷新一次或等几秒即可。
+### E. 版本更新
+日常：改代码 → 双击 `publish.bat`（push 后 Workers 自动重建）。手动路径：`npm run build`（或 build.bat）→ 按你的托管方式重传 `dist`。客户端刷新一次（或点「有新版本 → 刷新」浮条）即用新版。

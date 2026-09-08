@@ -1,0 +1,33 @@
+/* 占位骨架页通用样式（真实页面随模块逐个替换） */
+.ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 70%;
+  gap: var(--space-2);
+}
+
+.ph-title {
+  font-size: 22px;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.ph-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.ph-list {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--color-text-sub);
+}

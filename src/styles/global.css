@@ -1,0 +1,221 @@
+/* ============================================================
+   global.css —— 基础重置 + 布局骨架 + 通用微动效
+   只用 tokens.css 里的变量；组件页样式后续各自就近放 class。
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--bg-page);
+  color: var(--color-text);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  height: 100dvh;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation; /* 去掉移动端点击 300ms 延迟 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+img,
+svg {
+  display: block;
+}
+
+/* ---------- 应用骨架：移动优先竖屏，桌面自适应居中（硬性要求 B） ---------- */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  background: var(--bg-page);
+  overflow: hidden;
+}
+
+@media (min-width: 720px) {
+  .app {
+    border-inline: 1px solid var(--color-line);
+    box-shadow: 0 0 32px var(--shadow);
+  }
+}
+
+/* 内容滚动区（底部导航之上的主区域） */
+.page {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.pad {
+  padding: var(--space-4) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+}
+
+/* 通用标题字（Nunito / 圆润标题） */
+.h-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+/* 数字统一 tabular-nums（任务：数字全部 tabular-nums） */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ---------- 通用微动效（任务 C：按钮按压 scale(0.96) 回弹） ---------- */
+button,
+.pressable {
+  transition: transform var(--t-fast) var(--ease-pop);
+}
+button:active:not(:disabled),
+.pressable:active {
+  transform: scale(0.96);
+}
+
+/* 词入本 chip 逐个弹入（stagger 30ms 由 JS 注入延迟，动画本体在这） */
+@keyframes chip-pop {
+  0% {
+    transform: scale(0.5) translateY(8px);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.chip-pop {
+  animation: chip-pop 300ms var(--ease-pop) both;
+}
+
+/* 答对：绿色描边 + 对勾 pop */
+@keyframes ok-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  55% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.ok-pop {
+  animation: ok-pop var(--t-med) var(--ease-pop) both;
+}
+
+/* 答错：shake + 红边（红边由使用处加 class .wrong） */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+.shake {
+  animation: shake 400ms ease both;
+}
+
+/* 受击抖动（Boss 被击退） */
+@keyframes hit-bounce {
+  0% { transform: translateX(0) scale(1); }
+  30% { transform: translateX(-6px) scale(0.98); }
+  60% { transform: translateX(6px); }
+  100% { transform: translateX(0) scale(1); }
+}
+.hit-bounce {
+  animation: hit-bounce 300ms ease both;
+}
+
+/* 飘伤害数字 */
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.1);
+  }
+  100% {
+    transform: translateY(-56px) scale(1);
+    opacity: 0;
+  }
+}
+.float-up {
+  animation: float-up 900ms ease-out both;
+}
+
+/* 火焰脉冲（streak） */
+@keyframes flame-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.flame-pulse {
+  animation: flame-pulse 1.4s ease-in-out infinite;
+}
+
+/* 轻纸屑（每日目标完成）——由组件生成多个粒子使用 */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(140px) rotate(540deg);
+    opacity: 0;
+  }
+}
+.confetti {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  animation: confetti-fall 1s ease-in both;
+  pointer-events: none;
+}

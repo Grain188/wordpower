@@ -1,0 +1,125 @@
+/* ============================================================
+   tokens.css —�?全应用设计令牌（唯一配色/字体/动效来源�?   硬性要�?C：所有颜�?动效收敛�?CSS 变量，禁止组件里散写色值�?   ============================================================ */
+:root {
+  /* ---------- 品牌色（任务规定，勿改色值） ---------- */
+  --green: #58cc02;      /* 主色绿：主按�?/ 答对反馈 / 进度填充 */
+  --green-dark: #46a302; /* 主按钮按压�?*/
+  --blue: #1cb0f6;       /* 功能蓝：次级 / 选中 / 链接 */
+  --blue-dark: #159acb;  /* 功能蓝按�?投影 */
+  --red: #ff4b4b;        /* 警示红：答错 / Boss 攻击 / 到期角标 */
+  --yellow: #ffc800;     /* 激励黄：火�?/ 徽章 / 目标词高�?*/
+
+  /* ---------- 中性色（浅色模式） ---------- */
+  --bg: #ffffff;
+  --bg-soft: #f7f7f7;    /* 页面浅底 */
+  --card: #ffffff;
+  --text: #3c3c3c;       /* 正文 */
+  --text-sub: #777777;   /* 辅助 */
+  --text-faint: #afafaf; /* 更弱（占�?禁用�?*/
+  --line: #e5e5e5;       /* 分割�?*/
+  --shadow: rgba(60, 60, 60, 0.08);
+  --overlay: rgba(18, 18, 18, 0.45);
+
+  /* 语义色（由上面令牌派生，组件只用语义变量�?*/
+  --color-primary: var(--green);
+  --color-primary-dark: var(--green-dark);
+  --color-accent: var(--blue);
+  --color-danger: var(--red);
+  --color-energy: var(--yellow);
+  --bg-page: var(--bg-soft);
+  --bg-card: var(--card);
+  --color-text: var(--text);
+  --color-text-sub: var(--text-sub);
+  --color-line: var(--line);
+
+  /* 状态浅底（答对绿底 / 答错红底 / 高亮黄底�?*/
+  --tint-green: rgba(88, 204, 2, 0.12);
+  --tint-red: rgba(255, 75, 75, 0.12);
+  --tint-blue: rgba(28, 176, 246, 0.12);
+  --tint-yellow: rgba(255, 200, 0, 0.22);
+
+  /* 品牌底上的文字色（禁止组件散写） */
+  --on-primary: #ffffff;      /* 主绿/功能蓝按钮上的白�?*/
+  --on-energy: #5a4300;       /* 激励黄底上的深�?*/
+
+  /* CEFR 难度色点（A �?�?C 红） */
+  --cefr-a1: #58cc02;
+  --cefr-a2: #9ade4b;
+  --cefr-b1: #ffc800;
+  --cefr-b2: #ff9600;
+  --cefr-c1: #ff4b4b;
+  --cefr-c2: #e0439a;
+  --cefr-unknown: #afafaf;
+
+  /* ---------- 字体 ---------- */
+  /* Nunito（Google Fonts，失败自动回退系统圆体）；中文回退苹方/雅黑 */
+  --font-display: 'Nunito', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei',
+    ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei UI',
+    'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+
+  /* ---------- 间距 / 圆角 / 尺寸 ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+  --tap-min: 44px;         /* 硬性要�?B：触控目�?>= 44px */
+  --nav-h: 64px;
+  --topbar-h: 56px;
+  --content-max: 520px;    /* 手机竖屏内容最大宽，桌面居�?*/
+  --word-size: 36px;       /* 单词主展�?32-40px 区间 */
+  --card-flip: 0.6s;       /* 翻卡时长�?50-400ms 外的卡片翻转例外放宽�?*/
+
+  /* ---------- 动效 ---------- */
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性缓动（回弹�?*/
+  --t-fast: 150ms;
+  --t-med: 250ms;
+  --t-slow: 400ms;
+}
+
+/* ---------- 深色模式（tokens 全部走覆盖，组件零改动） ---------- */
+[data-theme='dark'] {
+  --bg: #121212;
+  --bg-soft: #121212;
+  --card: #1e1e1e;
+  --text: #f7f7f7;
+  --text-sub: #9e9e9e;
+  --text-faint: #6b6b6b;
+  --line: #333333;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --color-primary: #78e002;  /* 深色模式主绿改亮 */
+  --color-primary-dark: #64c400;
+  --color-accent: #4ec3f7;
+  --blue-dark: #3ba3d8;
+  --color-danger: #ff6b6b;
+  --bg-page: var(--bg);
+  --color-text: var(--text);
+
+  --tint-green: rgba(120, 224, 2, 0.16);
+  --tint-red: rgba(255, 107, 107, 0.16);
+  --tint-blue: rgba(78, 195, 247, 0.16);
+  --tint-yellow: rgba(255, 200, 0, 0.2);
+
+  --on-primary: #ffffff;
+  --on-energy: #ffe9a8; /* 深色下黄底上的字提亮 */
+}
+
+/* 尊重系统减弱动效偏好（硬性要�?B�?*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

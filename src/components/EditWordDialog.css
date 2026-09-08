@@ -1,0 +1,55 @@
+/* EditWordDialog.css（编辑对话框 + 居中弹层基元，ConfirmDialog 复用 .dlg-mask/.dlg） */
+.dlg-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--overlay);
+  animation: mask-in var(--t-med) ease both;
+}
+
+.dlg {
+  width: 100%;
+  max-width: 420px;
+  max-height: 86dvh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  animation: sheet-up var(--t-med) var(--ease-pop) both;
+}
+
+.dlg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+.dlg-title { margin: 0; font-size: 18px; }
+
+.dlg-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.dlg-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+.fld { display: flex; flex-direction: column; gap: 4px; }
+.fld > span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+}
+
+.dlg-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}

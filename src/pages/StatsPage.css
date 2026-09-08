@@ -1,0 +1,129 @@
+/* StatsPage.css —— 统计 */
+.stats-pad { display: flex; flex-direction: column; gap: var(--space-4); }
+.stats-loading, .stats-nokey { text-align: center; color: var(--text-sub); font-size: 13px; padding: var(--space-4) 0; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.card-title { margin: 0 0 var(--space-3); font-size: 16px; display: flex; align-items: center; gap: 6px; }
+.card-sub { margin: var(--space-2) 0 0; color: var(--text-faint); font-size: 11px; }
+
+/* 掌握率环形 */
+.mastery { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.mastery-pct { font-size: 24px; font-weight: 800; fill: var(--color-text); font-family: var(--font-display); }
+.mastery-sub { margin: 0; color: var(--text-sub); font-size: 12px; }
+
+.mini-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+.mini-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) 2px;
+}
+.mini-card b { font-size: 20px; font-family: var(--font-display); color: var(--color-primary); }
+.mini-card span { font-size: 10px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
+
+/* 热力 */
+.heat { display: flex; flex-direction: column; gap: var(--space-2); }
+.heat-row { display: flex; gap: 6px; }
+.heat-dow {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  gap: 2px;
+  font-size: 9px;
+  color: var(--text-faint);
+  width: 12px;
+}
+.heat-grid { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 2px; }
+.heat-col { display: grid; grid-template-rows: repeat(7, 14px); gap: 2px; }
+.heat-cell {
+  width: 12px;
+  height: 14px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--bg-soft));
+}
+.heat-cell.l0 { background: color-mix(in srgb, var(--color-primary) 8%, var(--bg-soft)); }
+.heat-cell.l1 { background: color-mix(in srgb, var(--color-primary) 30%, var(--bg-soft)); }
+.heat-cell.l2 { background: color-mix(in srgb, var(--color-primary) 55%, var(--bg-soft)); }
+.heat-cell.l3 { background: color-mix(in srgb, var(--color-primary) 78%, var(--bg-soft)); }
+.heat-cell.l4 { background: var(--color-primary); }
+.heat-cell.future { opacity: 0.25; }
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-faint);
+  justify-content: flex-end;
+}
+
+/* 花费卡 */
+.cost-head { display: flex; align-items: center; justify-content: space-between; }
+.cost-refresh { font-size: 12px; font-weight: 700; color: var(--color-accent); }
+.cost-total { display: flex; flex-direction: column; margin: var(--space-2) 0 var(--space-3); }
+.cost-total b { font-size: 34px; font-family: var(--font-display); color: var(--color-text); }
+.cost-total span { font-size: 12px; color: var(--text-sub); }
+.cost-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cost-table th, .cost-table td {
+  text-align: right;
+  padding: 6px 4px;
+  border-top: 1px solid var(--color-line);
+  color: var(--text-sub);
+}
+.cost-table th:first-child, .cost-table td:first-child { text-align: left; }
+.cost-table th { font-size: 11px; border-top: none; }
+.cost-model { font-family: monospace; font-size: 11px; word-break: break-all; }
+
+/* 最近口语会话（C10） */
+.chat-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.chat-his-item {
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-his-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.chat-his-head .tag { font-weight: 700; }
+.chat-his-head > span:nth-child(2) { color: var(--text-faint); font-size: 11px; font-weight: 600; margin-left: auto; }
+.his-replay {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-accent);
+  background: var(--tint-blue);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+}
+.his-replay:disabled { opacity: 0.4; }
+.his-feedback {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.6;
+}

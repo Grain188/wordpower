@@ -1,0 +1,172 @@
+/* BossBattle.css —�?Boss 战闯�?*/
+.battle { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.battle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+/* Boss 展示�?*/
+.boss-area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+.boss-sprite { line-height: 0; }
+.boss-sprite { animation: boss-idle 2.6s ease-in-out infinite; }
+@keyframes boss-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.hp-bar {
+  width: 100%;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background: var(--bg-soft);
+  border: 1px solid var(--color-line);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+.hp-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--t-med) ease, background var(--t-med) ease;
+}
+.hp-text { margin-top: 4px; font-size: 12px; color: var(--text-sub); }
+
+.boss-floats { position: absolute; top: 8px; left: 50%; pointer-events: none; }
+.bfloat {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+}
+.bfloat.dmg { color: var(--color-danger); }
+.bfloat.heal { color: var(--color-primary); }
+
+.boss-victory {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 28px;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  border-radius: var(--radius-lg);
+}
+
+/* 题目�?*/
+.q-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.q-wordline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.q-word { font-size: 30px; }
+.q-phon { color: var(--text-sub); font-size: 14px; }
+.q-say {
+  margin-left: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  border: 1px solid var(--color-line);
+}
+.q-tip { margin: 0; color: var(--text-sub); font-size: 12px; }
+.q-tip.warn { color: var(--color-energy); }
+
+.q-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+.q-opt {
+  position: relative;
+  min-height: 64px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-line);
+  background: var(--bg-card);
+  font-size: 15px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.q-opt.right { border-color: var(--color-primary); background: var(--tint-green); }
+.q-opt.wrong { border-color: var(--color-danger); background: var(--tint-red); }
+.q-opt.dim { opacity: 0.45; }
+.q-mark {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--on-primary);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.q-opt.wrong .q-mark { background: var(--color-danger); }
+
+/* C9 答错即时强化 */
+.wrong-feedback {
+  border: 2px solid var(--color-danger);
+  background: var(--tint-red);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: ok-pop var(--t-med) var(--ease-pop) both;
+}
+.wf-title { font-family: var(--font-display); font-size: 15px; }
+.wf-meaning { font-size: 15px; font-weight: 600; }
+.wf-example {
+  color: var(--text-sub);
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.wf-noexample { font-size: 12px; color: var(--text-faint); }
+.wf-example .fb-say-s {
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  flex: none;
+}
+
+.battle-loading,
+.battle-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  text-align: center;
+}
+.battle-loading .spinner { margin-bottom: var(--space-2); }
+.battle-end h3 { margin: 0; font-size: 20px; }

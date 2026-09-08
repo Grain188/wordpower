@@ -1,0 +1,115 @@
+/* TodayPage.css —�?今日学习 */
+.today-pad { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.today-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* streak */
+.streak-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+.streak-box .flame-pulse { animation: flame-pulse 1.4s ease-in-out infinite; }
+.streak-nums {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.streak-days { font-size: 26px; }
+.streak-nums span { font-size: 11px; color: var(--text-sub); font-weight: 700; }
+.mini-flames {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  margin-left: 4px;
+}
+.mini-flames svg { flex: none; }
+.badge-week {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  background: var(--color-energy);
+  color: var(--on-energy);
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  padding: 3px 8px;
+}
+
+/* 目标圆环 */
+.ring-wrap { position: relative; width: 76px; height: 76px; flex: none; }
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding-top: 24px;
+  gap: 1px;
+}
+.ring-center b { font-size: 18px; font-family: var(--font-display); }
+.ring-center span { font-size: 11px; color: var(--text-sub); }
+
+.confetti-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 130px;
+  height: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.today-loading { text-align: center; color: var(--text-sub); padding: 40px 0; }
+.today-empty { min-height: 300px; }
+
+/* deck */
+.deck-hint {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-sub);
+}
+.deck-pending {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: center;
+}
+.deck-nav {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-2);
+}
+
+/* done / 过渡面板 */
+.done-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-5) 0;
+}
+.done-panel .done-check {
+  width: 64px;
+  height: 64px;
+  font-size: 30px;
+  border-radius: 50%;
+  background: var(--tint-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.done-panel h2 { margin: 0; }

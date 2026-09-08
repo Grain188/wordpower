@@ -1,0 +1,34 @@
+/* ProfilePage.css —— 我的/设置 */
+.prof-pad { display: flex; flex-direction: column; gap: var(--space-4); }
+.prof-title { margin: 0 0 var(--space-3); font-size: 16px; }
+.prof-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin: var(--space-3) 0 4px;
+}
+.prof-hint { margin: var(--space-2) 0 0; color: var(--text-faint); font-size: 12px; line-height: 1.7; }
+.prof-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+.prof-actions .btn { flex: 1; }
+.prof-ok { color: var(--color-primary); font-size: 13px; font-weight: 700; margin: var(--space-2) 0 0; }
+.prof-err { color: var(--color-danger); background: var(--tint-red); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); font-size: 13px; margin: var(--space-2) 0 0; }
+
+.keyrow { display: flex; gap: var(--space-2); align-items: center; }
+.keyrow .field { flex: 1; }
+.keyrow .btn { min-height: 44px; }
+
+.stepper { display: flex; align-items: center; gap: var(--space-3); }
+.step-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--tint-green);
+  color: var(--color-primary);
+  font-size: 20px;
+  font-weight: 900;
+}
+.stepper b { font-size: 22px; font-family: var(--font-display); min-width: 34px; text-align: center; }
+.step-tip { font-size: 12px; color: var(--text-sub); }
+
+.prof-foot { text-align: center; color: var(--text-faint); font-size: 12px; padding: var(--space-2) 0 var(--space-4); }

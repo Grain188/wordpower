@@ -1,0 +1,102 @@
+/* WordRow.css —�?左滑操作词行 */
+.swipe {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  --sa-w: 132px; /* 滑出操作区宽度，.swipe-actions/.word-card 共享 */
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--sa-w);
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.sa-btn {
+  flex: 1;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--on-primary);
+}
+.sa-edit { background: var(--color-accent); }
+.sa-known { background: var(--color-primary); }
+.sa-back { background: var(--color-energy); color: var(--on-energy); }
+.sa-del { background: var(--color-danger); }
+
+.word-card {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  transition: transform var(--t-med) ease;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.swipe.open .word-card {
+  transform: translateX(calc(-1 * var(--sa-w)));
+}
+
+.row-known .word-card { opacity: 0.62; }
+.row-known .word-card:active { opacity: 1; }
+
+.wc-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.wc-words {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.wc-words .cefr-dot { align-self: center; }
+.wc-word { font-size: 19px; }
+.wc-pos { font-size: 12px; color: var(--text-sub); font-weight: 600; }
+.wc-phon { font-size: 12px; color: var(--text-sub); }
+.wc-say {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  border: 1px solid var(--color-line);
+  font-size: 17px;
+}
+.wc-meaning {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--color-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wc-meta {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tag-overdue {
+  color: var(--color-danger);
+  background: var(--tint-red);
+  border-color: transparent;
+}

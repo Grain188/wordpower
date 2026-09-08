@@ -1,0 +1,84 @@
+/* LibraryPage.css —�?生词�?*/
+.lib-pad { display: flex; flex-direction: column; gap: var(--space-3); }
+.lib-count { font-size: 14px; color: var(--text-sub); font-weight: 700; margin-left: 2px; }
+
+/* 统计�?*/
+.lib-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+}
+.stat-chip b { font-size: 22px; font-family: var(--font-display); color: var(--color-primary); }
+.stat-chip span { font-size: 11px; color: var(--text-sub); font-weight: 700; }
+
+/* 范围 / 维度 分段 */
+.seg {
+  display: flex;
+  background: var(--bg-soft);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+.seg-btn {
+  flex: 1;
+  min-height: 36px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+}
+.seg-btn.on {
+  background: var(--color-primary);
+  color: var(--on-primary);
+  box-shadow: 0 2px 0 var(--color-primary-dark);
+}
+.seg.dims .seg-btn.on { background: var(--color-accent); box-shadow: 0 2px 0 var(--blue-dark); }
+
+.lib-search { border-radius: var(--radius-full); }
+
+/* 分组 */
+.lib-groups-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+}
+.lib-hint { font-size: 12px; color: var(--text-sub); }
+.lib-toggle { font-size: 13px; font-weight: 700; color: var(--color-accent); }
+.lib-empty { text-align: center; color: var(--text-sub); padding: 40px 0; }
+
+.lib-group-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+.lib-group-head b { font-size: 15px; }
+.chevron {
+  transition: transform var(--t-fast) ease;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.chevron.on { transform: rotate(90deg); color: var(--color-primary); }
+
+.lib-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+}

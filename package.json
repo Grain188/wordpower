@@ -1,0 +1,25 @@
+{
+  "name": "wordpower-pwa",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "拍照导入 + 智能复习 + 口语陪练的英语单词学习 PWA（纯前端）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/gen-sw.mjs",
+    "preview": "vite preview",
+    "icons": "node scripts/gen-icons.mjs",
+    "smoke": "node scripts/smoke-m1.mjs && node scripts/smoke-m2.mjs && node scripts/smoke-m3.mjs && node scripts/smoke-m6.mjs && node scripts/smoke-m8.mjs"
+  },
+  "dependencies": {
+    "dexie": "^4.4.5",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "ts-fsrs": "^5.4.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "fake-indexeddb": "^6.2.5",
+    "vite": "^8.2.2"
+  }
+}

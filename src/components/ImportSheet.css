@@ -1,0 +1,172 @@
+/* ImportSheet.css —�?导入向导全屏�?*/
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--overlay);
+  animation: mask-in var(--t-med) ease both;
+}
+@keyframes mask-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sheet {
+  width: 100%;
+  max-width: var(--content-max);
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--space-4) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  animation: sheet-up var(--t-med) var(--ease-pop) both;
+  display: flex;
+  flex-direction: column;
+}
+@keyframes sheet-up {
+  from { transform: translateY(60px); opacity: 0.4; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+.sheet-title { margin: 0; font-size: 20px; }
+.sheet-x {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-radius: 50%;
+  font-size: 15px;
+  color: var(--text-sub);
+  background: var(--bg-soft);
+}
+
+.sheet-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.sheet-sub { margin: 0; color: var(--text-sub); font-size: 13px; }
+
+/* 来源选择�?*/
+.pick-grid { display: flex; flex-direction: column; gap: var(--space-3); }
+.pick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-soft);
+  border: 2px solid var(--color-line);
+  text-align: left;
+  transition: border-color var(--t-fast) ease, background var(--t-fast) ease;
+}
+.pick-card b { font-family: var(--font-display); font-size: 16px; }
+.pick-card small { color: var(--text-sub); }
+.pick-cam { background: var(--tint-green); border-color: transparent; }
+.pick-paste { background: var(--tint-blue); border-color: transparent; }
+.pick-icon { font-size: 26px; margin-bottom: 4px; }
+
+/* busy */
+.busy-wrap { align-items: center; padding: var(--space-6) 0; }
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid var(--color-line);
+  border-top-color: var(--color-primary);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* error */
+.error-box {
+  border-radius: var(--radius-md);
+  background: var(--tint-red);
+  color: var(--color-danger);
+  padding: var(--space-4);
+  line-height: 1.6;
+}
+.error-box p { margin: 4px 0 0; font-size: 13px; }
+
+/* 确认列表 */
+.confirm-body { gap: var(--space-3); }
+.confirm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.confirm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 2px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--bg-card);
+}
+.confirm-main { flex: 1; min-width: 0; }
+.confirm-wordline { display: flex; align-items: center; gap: 6px; }
+.confirm-word { font-size: 20px; }
+.confirm-phon { color: var(--text-sub); font-size: 12px; }
+.confirm-meaning { font-size: 13px; color: var(--color-text); margin-top: 2px; }
+.confirm-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.confirm-ops { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.op-btn {
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-accent);
+  background: var(--tint-blue);
+}
+.op-drop { color: var(--color-danger); background: var(--tint-red); }
+.op-btn.op-known { color: var(--on-primary); background: var(--color-primary); }
+
+.confirm-row.is-known { opacity: 0.55; border-style: dashed; }
+.confirm-row.is-drop { opacity: 0.4; }
+
+.sheet-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+.sheet-actions.col { flex-direction: column; }
+.sheet-actions.col .btn { width: 100%; }
+
+/* done */
+.done-head { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.done-check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--on-primary);
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.done-head h3 { margin: 0; font-size: 20px; }
+.done-chips {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.chip {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: var(--tint-green);
+  color: var(--color-primary);
+}

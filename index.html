@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <!-- PWA / iOS meta -->
+    <meta name="theme-color" content="#58CC02" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="词力" />
+    <meta name="description" content="拍照导入生词，FSRS 智能复习，AI 口语陪练 —— 个人英语单词学习 PWA" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <!-- 标题字体 Nunito（display=swap：加载失败自动回退系统字体，不影响离线使用） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <title>词力 · 英语单词学习</title>
+    <style>
+      /* 防白屏闪动：CSS 加载前给一个接近主题的背景 */
+      html { background: #f7f7f7; }
+      #boot {
+        font: 600 14px/1.6 -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        color: #777;
+        padding: 48px 24px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="boot">词力加载中…（若长时间停留，按 F12 看 Console 报错）</div></div>
+    <noscript>词力需要启用 JavaScript 才能运行。</noscript>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

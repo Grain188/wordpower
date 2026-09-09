@@ -9,14 +9,39 @@ import { normalizeWord } from '../lib/words.js'
 export const MAX_OCR_ITEMS = 40 // 防一整页 OCR 失控（前端截断）
 
 // 精炼 OCR prompt。DeepSeek json_object 模式要求正文出现 "JSON" 字样。
-const OCR_PROMPT = `你是英文生词提取器。识别图片中所有英文单词，忽略中文/水印/无关字符，同词去重。
+const OCR_PROMPT = `你是英文生词提取器。识别图片中所有值得背诵的英文生词，忽略中文/水印/无关字符，同词去重。
 只输出 JSON：{"words":[{"word":"单词原形小写","phonetic":"英式音标","pos":"词性缩写如 n./v./adj.","meaning_zh":"简明中文释义","cefr_level":"A1|A2|B1|B2|C1|C2","theme":"academic|daily|news|speaking","example_sentence":"含该词的一句话例句"}]}
 字段缺失填空字符串，最多 40 词，不要输出其他内容。`
 
-const ANNOTATE_PROMPT = (text) => `把下面用户粘贴的生词文本整理成结构化 JSON。可能已含中文释义：已有中文直接采用不要重译；缺 meaning_zh 就补简明中文。词用小写原形；example_sentence 原创一句 ≤12 词的例句。
+const ANNOTATE_PROMPT = (text) => `整理下面的生词/课文文本为结构化 JSON。重要规则：
+1. 只挑"值得背的英文生词"：名词/动词/形容词/副词等实词；跳过基础功能词(a/the/of/and/was/have 之类)与超高频简单词，跳过纯数字、网址、邮箱、人名地名等专有名词。
+2. 如果输入是"英文词 + 中文"成对出现的清单（词和释义同行/同格），直接按对采用其中文释义，不要拆错列、不要重译。
+3. 没有释义对的生词补一句简明中文释义；词一律小写原形；同词只留一条。
+4. 中文课文配词就正常整词，别把单词拆成字母。
 只输出 JSON：{"words":[{"word":"","phonetic":"","pos":"","meaning_zh":"","cefr_level":"A1|A2|B1|B2|C1|C2","theme":"academic|daily|news|speaking","example_sentence":""}]}
 用户文本：
 """${String(text).slice(0, 4000)}"""`
+
+// 基础功能词/超高频词黑名单（客户端兜底：模型漏跳的在这里再跳一次）
+const SKIP_COMMON = new Set(
+  [
+    'a an the and or nor but so for of to in on at by with from into onto off over under above below per via as if else then than too very just also not no yes yet',
+    'i you he she it we they me him her us them my your his its our their this that these those who whom whose which what when where why how',
+    'be am is are was were been being do does did doing have has had having can could will would shall should may might must ought need dare',
+    'up down out about after before while since until during against between among through within without across along behind beyond',
+    'there here some any more most all each every both few other such only own same new old good bad great little big small high low',
+    'one two three first second last next much many again once never always often sometimes now then today tomorrow yesterday here there',
+  ].join(' ').split(/\s+/)
+)
+
+function isJunkWord(word) {
+  const w = String(word || '')
+  if (!w || w.length > 30 || w.length < 2) return true
+  if (/[0-9]/.test(w)) return true // 含数字
+  if (/http|www\.|@|_/.test(w)) return true // 网址/邮箱痕迹
+  if (SKIP_COMMON.has(w.toLowerCase())) return true
+  return false
+}
 
 /** 把模型返回项规整成 repo.importWords 可直接吃的结构（容忍 key 变体） */
 export function normalizeItem(raw) {
@@ -44,7 +69,7 @@ function wordsOf(parsed) {
   return []
 }
 
-/** 去重 + 截断（ocr/annotate 共用） */
+/** 去重 + 噪音过滤 + 截断（ocr/annotate 共用） */
 export function normalizeItems(parsed) {
   const seen = new Set()
   const out = []
@@ -52,7 +77,7 @@ export function normalizeItems(parsed) {
     const item = normalizeItem(raw)
     if (!item) continue
     const norm = normalizeWord(item.word)
-    if (seen.has(norm)) continue
+    if (seen.has(norm) || isJunkWord(norm)) continue // 跳过功能词/数字/网址等
     seen.add(norm)
     out.push(item)
   }

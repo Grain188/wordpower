@@ -1,0 +1,10 @@
+{
+  "model": "deepseek-v4-flash",
+  "max_tokens": 800,
+  "messages": [
+    {
+      "role": "user",
+      "content": "把以下英文词编成一段连贯的生活情景剧情，用于口语对演练习：interview（面试）、luggage（行李）、discount（折扣）。要求：让每个词在剧情里承担符合语义的戏份；给你和NPC各设一个有代入感的身份；opening_line 是NPC开场白（英文≤40词）自然带出第一个词。不需要思考过程，直接只输出JSON：{\"title\":\"中文情景标题\",\"scene_brief_cn\":\"30字简介\",\"your_role\":\"英文角色\",\"npc_role\":\"英文角色\",\"npc_persona\":\"英文人设一句\",\"opening_line\":\"英文开场白\"}"
+    }
+  ]
+}

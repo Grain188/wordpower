@@ -19,7 +19,7 @@ async function scenarioReply(scenario, rounds) {
       msgs.push({ role: r.role === 'user' ? 'user' : 'assistant', content: r.content })
     }
   }
-  // 偶发空返回 → 重试一次
+  // 偶发空返回 → 重试一次；解析策略宽容：拿不到 JSON 时直接把模型原话当正文（不误判失败）
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const { content } = await api.complete({
@@ -30,11 +30,17 @@ async function scenarioReply(scenario, rounds) {
         task: 'chat',
         hint: attempt > 1 ? '情景对演·重试' : '情景对演',
       })
-      if (!content) throw new Error('empty')
-      const parsed = parseJsonContent(content, '情景对演')
-      const en = String(parsed?.en || '').trim()
-      if (en) return { en, zh: String(parsed?.zh || '').trim() }
-      throw new Error('no-en')
+      const text = String(content || '').trim()
+      if (!text) throw new Error('empty')
+      // 先试 JSON {en,zh}；解析失败/缺 en 时，把原文当英文正文（避免误伤正常对话）
+      try {
+        const parsed = parseJsonContent(text, '情景对演')
+        const en = String(parsed?.en || '').trim()
+        if (en) return { en, zh: String(parsed?.zh || '').trim() }
+      } catch {
+        /* 落到下方原文兜底 */
+      }
+      return { en: text.slice(0, 500), zh: '' }
     } catch {
       /* retry */
     }

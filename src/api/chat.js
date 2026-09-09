@@ -12,8 +12,8 @@ export function sceneOf(id) {
   return SCENES.find((s) => s.id === id) || SCENES[0]
 }
 
-/** 每轮回复 token 上限：模型带 reasoning，需给思考链留余量（正文 ≤3 句 30 词 + 中文翻译） */
-export const CHAT_MAX_TOKENS = 512
+/** 每轮回复 token 上限（thinking 已关；正文 ≤3 句 30 词 + 中文翻译） */
+export const CHAT_MAX_TOKENS = 200
 
 /**
  * system prompt：话题 + 目标词注入 + 行为约束。
@@ -85,7 +85,7 @@ export async function summarizeChat(scene, targets, olderRounds) {
       },
       { role: 'user', content: `Topic: ${s.topic || 'free'}\n\n${transcript}` },
     ],
-    maxTokens: 400,
+    maxTokens: 140,
     task: 'summary',
     hint: '对话摘要',
   })

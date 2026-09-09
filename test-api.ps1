@@ -9,7 +9,8 @@
 #   .\test-api.ps1 -BodyFile my.json
 
 param(
-  [string]$BodyFile = 'test-body.json'
+  [string]$BodyFile = 'test-body.json',
+  [switch]$ThinkingDisabled
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,12 +44,22 @@ try { $null = $body | ConvertFrom-Json } catch {
   exit 1
 }
 
+# ---- optional: inject thinking disabled to compare A/B ----
+$payload = $body
+if ($ThinkingDisabled) {
+  $o = $body | ConvertFrom-Json
+  if (-not $o.PSObject.Properties['thinking']) {
+    $o | Add-Member -NotePropertyName thinking -NotePropertyValue ([pscustomobject]@{ type = 'disabled' })
+  }
+  $payload = $o | ConvertTo-Json -Depth 10 -Compress
+}
+
 function Invoke-One([string]$Name, [string]$Url) {
   try {
     $r = Invoke-WebRequest -Uri $Url -Method POST -Headers @{
       'Content-Type'  = 'application/json'
       Authorization   = "Bearer $Key"
-    } -Body $body -UseBasicParsing -TimeoutSec 60
+    } -Body $payload -UseBasicParsing -TimeoutSec 60
     $obj  = $r.Content | ConvertFrom-Json
     $msg  = $obj.choices[0].message
     $cont = if ($null -eq $msg.content) { '' } else { [string]$msg.content }

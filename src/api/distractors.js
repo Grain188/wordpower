@@ -26,7 +26,7 @@ export async function generateDistractorBatch(wrongWords) {
     model: modelOf('text'),
     messages: [{ role: 'user', content: PROMPT(items) }],
     json: true,
-    maxTokens: Math.min(2400, 200 + items.length * 120),
+    maxTokens: Math.min(1600, 160 + items.length * 90),
     task: 'distractor',
     hint: '干扰项生成',
   })

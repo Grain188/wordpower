@@ -132,36 +132,43 @@ export function createApiClient({ settings = getSettings, fetchFn = globalThis.f
       ? AbortSignal.any([timeoutCtrl.signal, signal])
       : timeoutCtrl.signal
 
-    let res
-    try {
-      res = await fetchFn(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${key}`,
-          // 可选：Worker 配了 CHAT_TOKEN 环境变量时需要一致（B6）
-          ...((s.chatToken || '').trim() ? { 'X-Chat-Token': s.chatToken.trim() } : {}),
-        },
-        body: JSON.stringify(body),
-        signal: combined,
-      })
-    } catch (e) {
-      if (e?.name === 'TimeoutError' || (timeoutCtrl.signal.aborted && !signal?.aborted)) {
+    let res = null
+    let data = null
+    let netErr = null
+    // V4 全系默认 thinking=on，思考 token 计入 max_tokens 且按输出计费 → 一律尝试关闭；
+    // 若模型不支持 thinking 字段（如部分 vision）返回 400，自动去掉该参数重试一次。
+    for (const withThinking of [true, false]) {
+      const payload = withThinking ? { ...body, thinking: { type: 'disabled' } } : body
+      try {
+        res = await fetchFn(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${key}`,
+            // 可选：Worker 配了 CHAT_TOKEN 环境变量时需要一致（B6）
+            ...((s.chatToken || '').trim() ? { 'X-Chat-Token': s.chatToken.trim() } : {}),
+          },
+          body: JSON.stringify(payload),
+          signal: combined,
+        })
+        data = await res.json().catch(() => null)
+        if (res.ok) break
+        if (withThinking && res.status === 400 && !data?.choices) continue // 不支持 thinking → 去掉重试
+        break
+      } catch (e) {
+        netErr = e
+        break
+      }
+    }
+    clearTimeout(timer) // 请求结束/放弃：先清超时
+    if (!res) {
+      if (netErr?.name === 'TimeoutError' || (timeoutCtrl.signal.aborted && !signal?.aborted)) {
         throw new ApiError('timeout', '请求超时，请重试')
       }
       if (signal?.aborted) throw new ApiError('aborted', '已取消')
-      // fetch 的 TypeError ≈ 网络失败或 CORS 拦截（R2 提示给用户）
       throw new ApiError('network', '网络错误或跨域被拦（CORS）：请检查 Worker 地址/网络')
-    } finally {
-      clearTimeout(timer)
     }
 
-    let data = null
-    try {
-      data = await res.json()
-    } catch {
-      /* 非 JSON 响应（网关 502 页等），走 status 分支 */
-    }
     if (!res.ok) {
       const msg = data?.error?.message || `HTTP ${res.status}`
       throw new ApiError(KIND_OF_STATUS[res.status] || 'bad', msg, { status: res.status })

@@ -25,7 +25,7 @@ async function scenarioReply(scenario, rounds) {
       const { content } = await api.complete({
         messages: msgs,
         json: false,
-        maxTokens: 512,
+        maxTokens: 200,
         temperature: 0.8 + attempt * 0.15,
         task: 'chat',
         hint: attempt > 1 ? '情景对演·重试' : '情景对演',

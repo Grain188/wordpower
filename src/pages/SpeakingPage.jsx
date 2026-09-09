@@ -256,7 +256,7 @@ export default function SpeakingPage({ openImport, goTab }) {
             { role: 'system', content: 'Act as a speaking coach. Give 2-3 short Chinese sentences of feedback (praise + one improvement tip), max 50 words, no heading.' },
             { role: 'user', content: `Target words: ${targets.map((t) => t.word).join(', ')}. Used correctly: ${usedWords.map((w) => w.word).join(', ') || 'none'}. User said: ${transcript}` },
           ],
-          maxTokens: 360,
+          maxTokens: 220,
           task: 'chat',
           hint: '口语点评',
         })

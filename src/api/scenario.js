@@ -4,9 +4,9 @@ import { getScenarioCache, putScenarioCache, deleteScenarioCache } from '../db/r
 import { normalizeWord } from '../lib/words.js'
 
 /** 情景卡生成输出上限（模型带 reasoning，需留思考链余量） */
-export const SCENARIO_GEN_TOKENS = 800
-/** 情景对话每轮回复上限（思考链 + bilingual JSON） */
-export const SCENARIO_REPLY_TOKENS = 512
+export const SCENARIO_GEN_TOKENS = 300
+/** 情景对话每轮回复上限（thinking 已关，双语正文够用即可） */
+export const SCENARIO_REPLY_TOKENS = 200
 /** 一局最长 AI 轮数 */
 export const SCENARIO_MAX_ROUNDS = 12
 

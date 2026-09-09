@@ -61,6 +61,7 @@ async function main() {
   const body = JSON.parse(captured.init.body)
   assert.deepEqual(body.response_format, { type: 'json_object' }, 'response_format=json_object')
   assert.equal(body.max_tokens, 500)
+  assert.deepEqual(body.thinking, { type: 'disabled' }, '文本调用默认关闭思考链')
   assert.equal(parsed.words[0].word, 'hello')
 
   // —— token 记账：hit=40, miss=60 ——
@@ -98,6 +99,25 @@ async function main() {
   // 无 key → auth
   const noKey = createApiClient({ settings: () => ({ endpointMode: 'direct', apiKey: '' }) })
   await assert.rejects(noKey.complete({ messages: [] }), (e) => e.kind === 'auth' && /API Key/.test(e.message))
+
+  // —— thinking 不支持(400)时自动去掉该参数重试一次 ——
+  let calls = 0
+  const retryClient = createApiClient({
+    settings: () => ({ endpointMode: 'direct', apiKey: 'sk-x' }),
+    fetchFn: async (url, init) => {
+      calls++
+      if (calls === 1) return { ok: false, status: 400, json: async () => ({ error: { message: 'unknown param thinking' } }) }
+      const b = JSON.parse(init.body)
+      assert.equal(b.thinking, undefined, '第二次请求不带 thinking')
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content: '{"ok":1}' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }),
+      }
+    },
+  })
+  await retryClient.complete({ messages: [], json: true, task: 'ocr', hint: 'x' })
+  assert.equal(calls, 2, '400 后应重试一次')
 
   console.log('✅ M2 smoke: API 层全部断言通过')
 }

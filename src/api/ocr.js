@@ -189,8 +189,8 @@ export async function annotatePastedText(text, { signal, hint = '文本归档' }
   }
 }
 
-/** 纯本地降级：从文本里抠词形（无释义，仅供「仅存词形」使用） */
-export function extractLocalWords(text) {
+/** 纯本地降级：从文本里抠词形（无释义），cap 可调（默认 60 保留兼容旧调用） */
+export function extractLocalWords(text, max = 60) {
   const tokens = String(text || '')
     .toLowerCase()
     .split(/[^a-zA-Z'’-]+/)
@@ -199,9 +199,47 @@ export function extractLocalWords(text) {
   const items = []
   for (const t of tokens) {
     const norm = normalizeWord(t)
-    if (seen.has(norm) || items.length >= 60) continue
+    if (seen.has(norm) || items.length >= max) continue
     seen.add(norm)
     items.push({ word: norm, phonetic: '', pos: '', meaningZh: '', cefr: '', theme: '', example: '' })
   }
   return items
+}
+
+/**
+ * 成对词表本地解析（Excel/词对文本的兜底与直通路径，零 AI、不限 60）：
+ * 每行识别「英文词 + 空格/Tab + 中文释义」，就地保留释义；纯词行退回词形提取。
+ */
+export function extractWordList(text, max = 600) {
+  const seen = new Set()
+  const out = []
+  const push = (w, zh = '') => {
+    const norm = normalizeWord(w)
+    if (!norm || seen.has(norm) || isJunkWord(norm) || out.length >= max) return
+    seen.add(norm)
+    out.push({ word: norm, phonetic: '', pos: '', meaningZh: zh, cefr: '', theme: '', example: '' })
+  }
+  const lines = String(text || '').split('\n')
+  for (const line of lines) {
+    const t = line.trim()
+    if (!t) continue
+    const pair = t.match(/^([A-Za-z][A-Za-z'’\- ]{0,29})\s+(.+)$/)
+    if (pair) {
+      const w = pair[1].trim()
+      let rest = pair[2].trim()
+      if (/[\u4e00-\u9fff]/.test(rest)) {
+        // 中文释义在 rest 开头；可容忍前面带词性缩写（如 "v. 放弃"）
+        const zhMatch = rest.match(/^[A-Za-z.]{0,6}?([\u4e00-\u9fff][^\t]*)/)
+        const zh = (zhMatch ? zhMatch[1] : rest).replace(/[。.;；,，、\s]+$/, '').trim()
+        if (zh) push(w, zh)
+      } else {
+        push(w)
+      }
+    } else {
+      // 无中文的行：整行若就是一个词则收下（如纯词列无释义）
+      const ws = t.match(/[A-Za-z][A-Za-z'’\-]{1,29}/g)
+      if (ws) ws.forEach((w) => push(w))
+    }
+  }
+  return out
 }

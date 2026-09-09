@@ -36,6 +36,20 @@ export function splitForAnnotate(text, size = 3800) {
   return out
 }
 
+/** 检测是否"英文词 + 中文"成对清单（≥3 行命中即视为词对表，可本地直接配对，不必调 AI） */
+export function detectPairs(text) {
+  let n = 0
+  for (const line of String(text || '').split('\n')) {
+    if (/^[A-Za-z][A-Za-z'’\- ]{0,30}\s*(?:\t| {1,5})[\u4e00-\u9fff]/.test(line)) {
+      n++
+      if (n >= 3) return true
+    }
+  }
+  return false
+}
+
+const finalize = (text, note) => ({ text, note, isPairs: detectPairs(text) })
+
 /** 把文档解析成可用的行文文本 */
 export async function fileToText(file) {
   const name = file?.name || ''
@@ -48,7 +62,7 @@ export async function fileToText(file) {
   if (TEXT_EXTS.has(ext)) {
     const text = cleanText(await file.text())
     if (!text) throw new Error('文件里没有文字内容')
-    return { text, note: '' }
+    return finalize(text, '')
   }
 
   // —— DOCX（mammoth）——
@@ -58,7 +72,7 @@ export async function fileToText(file) {
     const res = await m.extractRawText({ arrayBuffer: await file.arrayBuffer() })
     const text = cleanText(res?.value || '')
     if (!text) throw new Error('DOCX 里没解析到文字（可能是扫描件，请改用拍照导入）')
-    return { text, note: '' }
+    return finalize(text, '')
   }
 
   // —— PDF（pdfjs-dist）——
@@ -86,7 +100,7 @@ export async function fileToText(file) {
       doc = null
       const text = cleanText(parts.join('\n'))
       if (!text) throw new Error('这份 PDF 没有可提取的文字层（扫描版请改用拍照导入通道）')
-      return { text, note: 'PDF 按页提取文本' }
+      return finalize(text, 'PDF 按页提取文本')
     } finally {
       if (doc) await doc.destroy().catch(() => {})
       if (worker) worker.terminate()
@@ -132,7 +146,7 @@ export async function fileToText(file) {
     }
     const text = cleanText(rows.join('\n'))
     if (!text) throw new Error('Excel 里没有识别到英文单词列（请确认有英文单词；旧版 .xls 需另存为 .xlsx）')
-    return { text, note: 'Excel 已自动识别"英文列+中文列"，序号/表头/多余列已丢弃' }
+    return finalize(text, 'Excel 已自动识别"英文列+中文列"，序号/表头/多余列已丢弃')
   }
 
   throw new Error('该格式暂不支持')

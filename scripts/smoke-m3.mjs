@@ -89,4 +89,17 @@ assert.ok(segs.every((s) => s.length <= 3800), '每块不超上限')
 assert.ok(segs[0].startsWith('token0'), '第一块以开头开始')
 assert.ok(segs[segs.length - 1].includes('token1999'), '末块包含结尾内容')
 
+// —— 词表本地配对（Excel 直通路径）——
+import { detectPairs } from '../src/lib/docparse.js'
+import { extractWordList } from '../src/api/ocr.js'
+const pairText = ['apple\t苹果', 'banana\t香蕉', 'cherry\t樱桃', 'quick\t迅速的', 'bright\t明亮的'].join('\n')
+assert.equal(detectPairs(pairText), true, '成对词表被识别')
+assert.equal(detectPairs('This is a normal sentence with no Chinese here.'), false, '正文不是词对表')
+const wl = extractWordList(pairText)
+assert.equal(wl.length, 5)
+assert.equal(wl[0].word, 'apple')
+assert.equal(wl[0].meaningZh, '苹果', '保留中文释义')
+const big = Array.from({ length: 80 }, (_, i) => `word${i}\t义${i}`).join('\n')
+assert.ok(extractWordList(big).length === 80, '超过 60 也不截断（上限 600）')
+
 console.log('✅ M3 smoke: 图片/OCR 纯函数全部断言通过')

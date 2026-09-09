@@ -5,6 +5,7 @@ import {
   extractWordsFromImage,
   annotatePastedText,
   extractLocalWords,
+  extractWordList,
 } from '../api/ocr.js'
 import { importWords, noteImported } from '../db/repo.js'
 import { ApiError } from '../api/client.js'
@@ -101,8 +102,8 @@ export default function ImportSheet({ open, onClose, goTab }) {
       return
     }
     setMode(srcMode)
-    // 一次确认列表最多展示 150 个（防长文档刷屏；余量可再导）
-    const capped = unique.slice(0, 150)
+    // 一次确认列表最多展示 600 个（大词表也能一次导入）
+    const capped = unique.slice(0, 600)
     setItems(capped.map((it, i) => ({ ...it, key: i, skip: false, drop: false })))
     setPhase('confirm')
   }
@@ -134,13 +135,14 @@ export default function ImportSheet({ open, onClose, goTab }) {
 
   function degradeToLocal() {
     const text = payload?.type === 'text' ? payload.text : pasteText
-    const list = extractLocalWords(text)
+    // 成对词表走本地配对（保留中文释义、不限量），否则退化为抠词形
+    const list = mode === 'doc' ? extractWordList(text) : extractLocalWords(text)
     if (!list.length) {
       setError({ title: '文本里没有英文单词', msg: '请换成包含英文单词的内容' })
       setPhase('error')
       return
     }
-    toConfirm(list, payload?.type === 'text' && mode === 'doc' ? 'doc' : 'paste')
+    toConfirm(list, mode === 'doc' ? 'doc' : 'paste')
   }
 
   /** 文档通道：分块交给文本模型整理（一次一块，仍是批量请求），跨块由 toConfirm 去重 */
@@ -160,11 +162,18 @@ export default function ImportSheet({ open, onClose, goTab }) {
     setMode('doc')
     setCanDegrade(false)
     await runBusy('解析文档…', async () => {
-      const { text } = await fileToText(file)
+      const { text, isPairs } = await fileToText(file)
       if (!text.trim()) throw new Error('文档里没有可提取的文字')
       setPayload({ type: 'text', text })
-      const list = await docToItems(text)
-      toConfirm(list, 'doc')
+      if (isPairs) {
+        // 成对词表（英文+中文）：本地直接配对，零 AI、不丢行
+        setBusyLabel('整理词对…')
+        toConfirm(extractWordList(text), 'doc')
+      } else {
+        // 非词对（课文/正文等）：分块交给文本模型挑生词
+        const list = await docToItems(text)
+        toConfirm(list, 'doc')
+      }
     })
   }
 

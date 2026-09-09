@@ -42,6 +42,29 @@ async function scenarioReply(scenario, rounds) {
   throw new Error('NPC 连续两次回复失败，请稍后重试')
 }
 
+const LOCAL_PRAISES = [
+  'Yes, well said! Keep going.',
+  'Exactly — nice one! What else happened?',
+  'Great sentence! The scene moves on.',
+  'Perfect. Now the next twist...',
+]
+const LOCAL_FILLERS = [
+  'I see. Tell me more.',
+  'Interesting — what happened next?',
+  'Hmm, that sounds tricky. How did you deal with it?',
+  'Right. And how did that make you feel?',
+]
+
+/** 本地台词兜底：AI 掉线时也能继续对戏（提示用下一个目标词 / 简单回应推进） */
+function localLine(norms, statusRef, aiCount, lastUserText) {
+  const s = statusRef.current
+  const usedCount = norms.filter((n) => s.get(n)?.used).length
+  const nextTarget = norms.find((n) => !s.get(n)?.used)
+  if (lastUserText && usedCount > 0) return LOCAL_PRAISES[aiCount % LOCAL_PRAISES.length]
+  if (nextTarget) return `Now try to slip "${nextTarget}" naturally into your sentence.`
+  return LOCAL_FILLERS[aiCount % LOCAL_FILLERS.length]
+}
+
 export default function ScenarioChat({ words, onClose, goTab }) {
   const wordsMeta = useMemo(
     () =>
@@ -75,6 +98,7 @@ export default function ScenarioChat({ words, onClose, goTab }) {
   const stopAsrRef = useRef(null)
   const collectedRef = useRef('')
   const busyRef = useRef(false)
+  const localNotedRef = useRef(false) // AI 掉线降级提示只发一次
 
   const aiCount = rounds.filter((r) => r.role === 'ai').length
 
@@ -161,11 +185,17 @@ export default function ScenarioChat({ words, onClose, goTab }) {
         return
       }
       const reply = await scenarioReply(scenario, [...rounds, { role: 'user', content: text }])
-      if (!reply.en) throw new Error('AI 回复为空')
       pushRound('ai', reply)
       speakEn(reply.en)
-    } catch (e) {
-      pushRound('ai', { content: e?.message || '回复失败', zh: '', error: true })
+    } catch {
+      // AI 掉线 → 本地台词兜底，练习不中断（仅首次提示降级）
+      if (!localNotedRef.current) {
+        localNotedRef.current = true
+        pushRound('hint', { content: '', zh: '（AI 回复暂不可用，已切换本地台词继续对戏）' })
+      }
+      const local = localLine(norms, statusRef, rounds.filter((r) => r.role === 'ai').length, text)
+      pushRound('ai', { content: local, zh: '' })
+      speakEn(local)
     } finally {
       busyRef.current = false
       setBusy(false)

@@ -61,7 +61,7 @@ export function normalizeItems(parsed) {
 
 /** 修复重试：把上次的"脏输出"交给文本模型整理成合法 JSON（无需重发图片，省 token） */
 async function repairJson(rawContent, hint) {
-  const { parsed } = await api.complete({
+  const { content } = await api.complete({
     model: modelOf('text'),
     messages: [
       {
@@ -69,12 +69,12 @@ async function repairJson(rawContent, hint) {
         content: `以下是一段可能夹带说明文字/围栏的模型输出，请提取其中的英文生词数据并只输出合法 JSON：{"words":[{"word":"","phonetic":"","pos":"","meaning_zh":"","cefr_level":"","theme":"","example_sentence":""}]}。没有词就输出 {"words":[]}。\n\n原始输出：\n${String(rawContent).slice(0, 4000)}`,
       },
     ],
-    json: true,
+    json: false,
     maxTokens: 1600,
     task: 'ocr',
     hint: `${hint}·修复`,
   })
-  return parsed
+  return parseJsonContent(content, `${hint}·修复`)
 }
 
 /** A 通道：图片 → 词条（容错解析；失败/无词都先自动用文本模型修复一次） */
@@ -125,18 +125,43 @@ export function looksPureLatin(text) {
   return !/[\u4e00-\u9fff]/.test(String(text || ''))
 }
 
-/** B 通道：粘贴文本 → 词条（一次批量，禁止一词一请求） */
+/** B 通道：粘贴文本 → 词条（一次批量，禁止一词一请求）。
+ *  不用 response_format 强约束（个别模型会因此返回空），改走容错解析；失败自动修复重试一次。 */
 export async function annotatePastedText(text, { signal, hint = '文本归档' } = {}) {
-  const { parsed } = await api.complete({
-    model: modelOf('text'),
-    messages: [{ role: 'user', content: ANNOTATE_PROMPT(text) }],
-    json: true,
-    maxTokens: 1600,
-    task: 'annotate',
-    signal,
-    hint,
-  })
-  return normalizeItems(parsed)
+  async function oneShot() {
+    const { content } = await api.complete({
+      model: modelOf('text'),
+      messages: [{ role: 'user', content: ANNOTATE_PROMPT(text) }],
+      json: false,
+      maxTokens: 1600,
+      task: 'annotate',
+      signal,
+      hint,
+    })
+    return normalizeItems(parseJsonContent(content, hint))
+  }
+
+  try {
+    return await oneShot()
+  } catch {
+    // 空内容/解析失败 → 让文本模型把脏输出整理成合法 JSON（一次修复）
+    let repaired = []
+    try {
+      const { content } = await api.complete({
+        model: modelOf('text'),
+        messages: [{ role: 'user', content: ANNOTATE_PROMPT(text) }],
+        json: false,
+        maxTokens: 1600,
+        task: 'annotate',
+        signal,
+        hint: `${hint}·重试`,
+      })
+      repaired = normalizeItems(parseJsonContent(content, `${hint}·重试`))
+    } catch {
+      throw new ApiError('bad', `${hint}失败：模型连续两次返回空/非法内容。可点「仅存词形（不上传）」先把词收进来`)
+    }
+    return repaired
+  }
 }
 
 /** 纯本地降级：从文本里抠词形（无释义，仅供「仅存词形」使用） */

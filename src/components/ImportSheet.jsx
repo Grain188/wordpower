@@ -145,11 +145,11 @@ export default function ImportSheet({ open, onClose, goTab }) {
 
   /** 文档通道：分块交给文本模型整理（一次一块，仍是批量请求），跨块由 toConfirm 去重 */
   async function docToItems(text) {
-    const segs = splitForAnnotate(text)
+    const segs = splitForAnnotate(text, 2600) // 小分块更稳（部分模型对大段输出会空）
     const all = []
     for (let i = 0; i < segs.length; i++) {
       setBusyLabel(`AI 整理中…（第 ${i + 1}/${segs.length} 段）`)
-      const list = await annotatePastedText(segs[i])
+      const list = await annotatePastedText(segs[i], { hint: '文档归档' })
       all.push(...list)
     }
     return all

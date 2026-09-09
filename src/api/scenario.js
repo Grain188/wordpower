@@ -212,17 +212,18 @@ export async function getOrCreateScenario(words, { force = false } = {}) {
 /** 情景对话 system prompt（对演规则注入） */
 export function buildScenarioSystem(scenario) {
   return [
-    `We are doing a role-play (English, CEFR B1–B2). I am ${scenario.your_role}; you are ${scenario.npc_role} (persona: ${scenario.npc_persona}).`,
-    `Plot: ${scenario.scene_brief_cn} Beats: ${(scenario.beats || [])
-      .map((b) => `${b.beat_cn} (use: ${b.must_use})`)
-      .join(' | ')}`,
+    `We are doing a role-play (English only, CEFR B1-B2). I am ${scenario.your_role}; you are ${scenario.npc_role} (persona: ${scenario.npc_persona}).`,
+    `Scene: ${scenario.scene_brief_cn || 'an everyday situation'}. Beats: ${(scenario.beats || [])
+      .map((b, i) => `${i + 1}) say "${b.must_use}"`)
+      .join(' ')}`,
     'Rules:',
     '- Advance the story beat by beat through the conversation.',
-    '- Each reply ≤ 2 sentences and ≤ 25 words, always end with ONE short question or a gap waiting for me to speak.',
+    '- Each reply <= 2 sentences and <= 25 words, always end with ONE short question or a gap waiting for me to speak.',
     '- Use target words naturally: first mention each one yourself as a model, then in a later turn leave a gap for me to say it.',
     '- If I use a target word correctly: praise briefly and move the plot on. If I misuse it: just restate the correct form and continue (do not lecture).',
     '- If the learner keeps missing a word twice, you may add a very short Chinese hint in the "zh" field.',
     '- If I say "exit", wrap up the scene in one line.',
-    '- Reply ONLY as JSON: {"en":"...","zh":"中文翻译"}',
+    '- Always reply in ENGLISH. Only the "zh" field may contain Chinese.',
+    '- Reply ONLY as JSON: {"en":"english reply","zh":"中文翻译"}',
   ].join('\n')
 }

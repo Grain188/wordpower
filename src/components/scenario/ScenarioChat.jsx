@@ -19,7 +19,12 @@ async function scenarioReply(scenario, rounds) {
       msgs.push({ role: r.role === 'user' ? 'user' : 'assistant', content: r.content })
     }
   }
-  // 偶发空返回 → 重试一次；解析策略宽容：拿不到 JSON 时直接把模型原话当正文（不误判失败）
+  const isMostlyChinese = (t) => {
+    const cjk = (t.match(/[\u4e00-\u9fff]/g) || []).length
+    const lat = (t.match(/[A-Za-z]/g) || []).length
+    return cjk > 0 && cjk / (cjk + lat) >= 0.3
+  }
+  // 偶发空返回/中文串台 → 自动再问一次；解析宽容：拿不到 JSON 时原文即正文
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const { content } = await api.complete({
@@ -32,13 +37,18 @@ async function scenarioReply(scenario, rounds) {
       })
       const text = String(content || '').trim()
       if (!text) throw new Error('empty')
-      // 先试 JSON {en,zh}；解析失败/缺 en 时，把原文当英文正文（避免误伤正常对话）
+      // 先试 JSON {en,zh}
       try {
         const parsed = parseJsonContent(text, '情景对演')
         const en = String(parsed?.en || '').trim()
-        if (en) return { en, zh: String(parsed?.zh || '').trim() }
+        if (en && !isMostlyChinese(en)) return { en, zh: String(parsed?.zh || '').trim() }
       } catch {
-        /* 落到下方原文兜底 */
+        /* 落原文兜底 */
+      }
+      if (isMostlyChinese(text) && attempt === 1) {
+        // 中文串台 → 追加"只用英文"再问一次
+        msgs = [...msgs, { role: 'user', content: 'Reply in English only, short, and end with a question. No Chinese.' }]
+        continue
       }
       return { en: text.slice(0, 500), zh: '' }
     } catch {

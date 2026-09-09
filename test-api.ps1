@@ -122,9 +122,11 @@ Write-Host ''
 $sameContent = ($direct.Content -eq $proxy.Content) -and ($direct.ContentLen -gt 0)
 $sameFinish  = $direct.Finish -eq $proxy.Finish
 $sameTokens  = $direct.CompletionTokens -eq $proxy.CompletionTokens
-Write-Host "content equal      : $sameContent"
+Write-Host "content equal      : $sameContent (two responses often differ slightly - normal sampling)"
 Write-Host "finish_reason equal: $sameFinish"
 Write-Host "completion_tokens  : direct=$($direct.CompletionTokens) proxy=$($proxy.CompletionTokens)  (equal: $sameTokens)"
-if (-not $sameContent) {
-  Write-Host 'NOTE: contents differ or empty - check finish_reason=length (thinking consumed budget) and model name in test-body.json'
+$anyEmpty  = ($direct.ContentLen -eq 0) -or ($proxy.ContentLen -eq 0)
+$anyLength = ($direct.Finish -eq 'length') -or ($proxy.Finish -eq 'length')
+if ($anyEmpty -or $anyLength) {
+  Write-Host 'WARNING: empty content or finish_reason=length detected - thinking likely consumed the budget (retry with -ThinkingDisabled)'
 }

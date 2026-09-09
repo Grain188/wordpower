@@ -103,16 +103,36 @@ export async function fileToText(file) {
       const ws = wb.Sheets[sheetName]
       if (!ws) continue
       const grid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
-      for (const row of grid) {
-        if (Array.isArray(row)) {
-          const line = row.map((c) => String(c ?? '').trim()).filter(Boolean).join('\t')
-          if (line) rows.push(line)
+      if (!grid.length) continue
+      // —— 识别列：英文单词列 + 中文释义列（表头名字不区分大小写）——
+      const header = (grid[0] || []).map((c) => String(c ?? '').toLowerCase().trim())
+      const enCol = header.findIndex((h) => /^(word|english|en|单词|词汇|英文)$/.test(h))
+      const zhCol = header.findIndex((h) => /^(meaning|translation|zh|cn|释义|中文|翻译|汉语)$/.test(h))
+      const enLike = (s) => /^[A-Za-z][A-Za-z'’\- ]{1,29}$/.test(String(s || '').trim())
+      const hasCjk = (s) => /[\u4e00-\u9fff]/.test(String(s || '').trim())
+      const hasHeaderNames = enCol >= 0 || zhCol >= 0
+
+      for (let ri = hasHeaderNames ? 1 : 0; ri < grid.length; ri++) {
+        const row = grid[ri]
+        if (!Array.isArray(row)) continue
+        // 显式列名优先；无表头则猜：第一个像英文单词的格 = 词，行里第一个含中文的格 = 释义
+        let en = ''
+        let zh = ''
+        if (enCol >= 0 && zhCol >= 0) {
+          en = String(row[enCol] ?? '').trim()
+          zh = String(row[zhCol] ?? '').trim()
+        } else {
+          const enIdx = row.findIndex((c) => enLike(c) && !hasCjk(c))
+          if (enIdx >= 0) en = String(row[enIdx]).trim()
+          const zhIdx = row.findIndex((c, i) => i !== enIdx && hasCjk(c))
+          if (zhIdx >= 0) zh = String(row[zhIdx]).trim()
         }
+        if (enLike(en)) rows.push(zh ? `${en}\t${zh}` : en) // 词+释义同行，模型按对处理
       }
     }
     const text = cleanText(rows.join('\n'))
-    if (!text) throw new Error('Excel 里没有内容')
-    return { text, note: 'Excel 每行按单元格（制表符）连接，词与中文同格时会被一起识别' }
+    if (!text) throw new Error('Excel 里没有识别到英文单词列（请确认有英文单词；旧版 .xls 需另存为 .xlsx）')
+    return { text, note: 'Excel 已自动识别"英文列+中文列"，序号/表头/多余列已丢弃' }
   }
 
   throw new Error('该格式暂不支持')

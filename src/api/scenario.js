@@ -17,22 +17,15 @@ export function scenarioGroupKey(words) {
     .join(',')
 }
 
-/** 生词带释义/词性给模型：让场景按"语义"构思而非泛泛 */
+/** 生词带释义给模型：让场景按"语义"构思。英文精简指令（中文长规则会触发超长思考→空返回） */
 const GEN_PROMPT = (words) => {
   const list = words
-    .map((w) => `${w.word}（${w.meaningZh || '?'}${w.pos ? `，${w.pos}` : ''}）`)
-    .join('；')
-  return `把以下英文生词/词组编进一段连贯的生活情景剧情，用于"口语对演练习"（用户扮演当事人，AI 扮演 NPC）。
-生词（含中文释义，构思场景请以语义为准，选贴切的地点/人物/事件，不要套通用场景）：
-${list}
-
-要求：
-1. 让每个词在剧情里承担符合语义的戏份；所有词编进同一段连贯剧情（时间地点人物自洽、有起因经过），严禁清单罗列。
-2. 明确角色扮演：给"你"和"NPC"各有代入感的身份，剧情围绕两人目标与冲突推进。
-3. opening_line 是 NPC 开场白（英文 ≤40 词），自然带出第一个目标词。
-
-不需要思考过程，直接只输出 JSON：
-{"title":"中文情景标题","scene_brief_cn":"30 字中文简介","your_role":"英文角色","npc_role":"英文角色","npc_persona":"英文人设一句","opening_line":"英文开场白 ≤40 词"}`
+    .map((w) => `${w.word} (meaning: ${w.meaningZh || '?'}${w.pos ? `, ${w.pos}` : ''})`)
+    .join(' | ')
+  return `Create ONE short coherent role-play scenario for these words: ${list}
+Rules: make the scene fit their meanings; each word gets a role in the plot; choose clear roles for me (the learner) and for you (the NPC); opening_line is your first line (English, <=40 words) that naturally uses the first word.
+Do not plan aloud. Output ONLY this JSON (title and scene_brief_cn in Chinese, roles in English):
+{"title":"chinese scene title","scene_brief_cn":"one chinese sentence of plot","your_role":"english role","npc_role":"english role","npc_persona":"short english persona","opening_line":"english line <=40 words"}`
 }
 
 /** 若模型没给 beats，用本地按词生成的节拍兜底（每词一句"自然说出"） */

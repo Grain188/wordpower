@@ -8,18 +8,14 @@ import { normalizeWord } from '../lib/words.js'
 
 export const MAX_OCR_ITEMS = 40 // 防一整页 OCR 失控（前端截断）
 
-// 精炼 OCR prompt。DeepSeek json_object 模式要求正文出现 "JSON" 字样。
-const OCR_PROMPT = `你是英文生词提取器。识别图片中所有值得背诵的英文生词，忽略中文/水印/无关字符，同词去重。
-只输出 JSON：{"words":[{"word":"单词原形小写","phonetic":"英式音标","pos":"词性缩写如 n./v./adj.","meaning_zh":"简明中文释义","cefr_level":"A1|A2|B1|B2|C1|C2","theme":"academic|daily|news|speaking","example_sentence":"含该词的一句话例句"}]}
-字段缺失填空字符串，最多 40 词，不要输出其他内容。`
+// 精炼 OCR prompt（英文精简，中文长规则会触发超长思考→空返回）
+const OCR_PROMPT = `Extract worth-memorizing English words from this image (ignore Chinese, watermarks, noise; dedupe).
+Output ONLY JSON: {"words":[{"word":"lowercase headword","phonetic":"UK phonetic","pos":"n./v./adj.","meaning_zh":"short Chinese meaning","cefr_level":"A1|A2|B1|B2|C1|C2","theme":"academic|daily|news|speaking","example_sentence":"one short example with the word"}]}
+Max 40 items; empty fields as "". Do not add extra text.`
 
-const ANNOTATE_PROMPT = (text) => `整理下面的生词/课文文本为结构化 JSON。重要规则：
-1. 只挑"值得背的英文生词"：名词/动词/形容词/副词等实词；跳过基础功能词(a/the/of/and/was/have 之类)与超高频简单词，跳过纯数字、网址、邮箱、人名地名等专有名词。
-2. 如果输入是"英文词 + 中文"成对出现的清单（词和释义同行/同格），直接按对采用其中文释义，不要拆错列、不要重译。
-3. 没有释义对的生词补一句简明中文释义；词一律小写原形；同词只留一条。
-4. 中文课文配词就正常整词，别把单词拆成字母。
-只输出 JSON：{"words":[{"word":"","phonetic":"","pos":"","meaning_zh":"","cefr_level":"A1|A2|B1|B2|C1|C2","theme":"academic|daily|news|speaking","example_sentence":""}]}
-用户文本：
+const ANNOTATE_PROMPT = (text) => `Turn the text below into a structured word list. Rules: pick only English words/phrases worth memorizing; skip function words (a/the/of/was/have etc.) and trivial common words, numbers, URLs, proper nouns; if the text already pairs an English word with Chinese on the same row/cell, keep that Chinese meaning as-is (do not retranslate, do not mix columns); otherwise give one short Chinese meaning; lowercase headwords; one entry per word.
+Output ONLY JSON: {"words":[{"word":"","phonetic":"","pos":"","meaning_zh":"","cefr_level":"A1|A2|B1|B2|C1|C2","theme":"academic|daily|news|speaking","example_sentence":""}]}
+User text:
 """${String(text).slice(0, 4000)}"""`
 
 // 基础功能词/超高频词黑名单（客户端兜底：模型漏跳的在这里再跳一次）
@@ -91,7 +87,7 @@ async function repairJson(rawContent, hint) {
     messages: [
       {
         role: 'user',
-        content: `以下是一段可能夹带说明文字/围栏的模型输出，请提取其中的英文生词数据并只输出合法 JSON：{"words":[{"word":"","phonetic":"","pos":"","meaning_zh":"","cefr_level":"","theme":"","example_sentence":""}]}。没有词就输出 {"words":[]}。\n\n原始输出：\n${String(rawContent).slice(0, 4000)}`,
+        content: `Fix the text below into valid JSON: {"words":[{"word":"","phonetic":"","pos":"","meaning_zh":"","cefr_level":"","theme":"","example_sentence":""}]}. No words found? output {"words":[]}. Output JSON only.\n\nRaw output:\n${String(rawContent).slice(0, 4000)}`,
       },
     ],
     json: false,

@@ -6,10 +6,10 @@ import { normalizeWord, pickLocalDistractors } from '../lib/words.js'
 import { shuffle } from '../lib/random.js'
 
 const PROMPT = (items) =>
-  `为每个英文生词造 3 个中文释义干扰项和 1 个新例句。
-规则：干扰项要是"像正确答案的中文词义"但绝不能等于我给出的正确释义（你会在输入里看到 correct_zh）；简短 2-6 字；例句 ≤12 词、含该词、难度贴合 CEFR。
-只输出 JSON：{"items":[{"word":"小写单词","distractors":["干扰1","干扰2","干扰3"],"example":"一句话例句"}]}
-输入：${JSON.stringify(items)}`
+  `For each word below, create 3 Chinese meaning distractors and 1 new example sentence.
+Rules: distractors must look like plausible Chinese meanings but NEVER equal the correct meaning (you will see correct_zh); keep each 2-6 Chinese chars; example sentence <=12 words containing the word.
+Output ONLY JSON: {"items":[{"word":"lowercase word","distractors":["d1","d2","d3"],"example":"one sentence"}]}
+Input: ${JSON.stringify(items)}`
 
 /**
  * 批量生成（一次请求）。

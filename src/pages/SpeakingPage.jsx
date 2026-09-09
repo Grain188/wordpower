@@ -253,8 +253,8 @@ export default function SpeakingPage({ openImport, goTab }) {
         const transcript = rounds.filter((r) => r.role === 'user').map((r) => r.content).join(' | ')
         const r = await api.complete({
           messages: [
-            { role: 'system', content: '你是口语教练。基于用户真实输出给 2-3 句中文点评（肯定优点+指出 1 个改进点），≤50 词，不输出标题。' },
-            { role: 'user', content: `目标词: ${targets.map((t) => t.word).join(', ')}。已正确使用: ${usedWords.map((w) => w.word).join(', ') || '无'}。用户说的话: ${transcript}` },
+            { role: 'system', content: 'Act as a speaking coach. Give 2-3 short Chinese sentences of feedback (praise + one improvement tip), max 50 words, no heading.' },
+            { role: 'user', content: `Target words: ${targets.map((t) => t.word).join(', ')}. Used correctly: ${usedWords.map((w) => w.word).join(', ') || 'none'}. User said: ${transcript}` },
           ],
           maxTokens: 360,
           task: 'chat',

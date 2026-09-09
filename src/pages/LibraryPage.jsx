@@ -6,7 +6,7 @@ import {
   deleteWord,
   takeRecentImported,
 } from '../db/repo.js'
-import { CEFR_LEVELS, THEMES, classifyPos, POS_GROUP_ZH, themeZh } from '../lib/words.js'
+import { CEFR_LEVELS, THEMES, classifyPos, POS_GROUP_ZH, themeZh, findDupGroups } from '../lib/words.js'
 import { setScenarioWords } from '../lib/scenarioIntent.js'
 import WordRow from '../components/WordRow.jsx'
 import EditWordDialog from '../components/EditWordDialog.jsx'
@@ -51,6 +51,9 @@ export default function LibraryPage({ openImport, goTab }) {
   // 多选 → 编情景（3-5 个词）
   const [multi, setMulti] = useState(false)
   const [selected, setSelected] = useState(() => new Set())
+  // 相似词扫描
+  const [scanOpen, setScanOpen] = useState(false)
+  const [dupGroups, setDupGroups] = useState([])
 
   useEffect(() => {
     ;(async () => {
@@ -84,6 +87,11 @@ export default function LibraryPage({ openImport, goTab }) {
     setSelected(new Set())
     goTab('speaking')
   }
+
+  // 相似扫描结果随词库变化即时刷新
+  useEffect(() => {
+    if (scanOpen) setDupGroups(findDupGroups(words))
+  }, [words, scanOpen])
 
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase()
@@ -155,6 +163,13 @@ export default function LibraryPage({ openImport, goTab }) {
           >
             {multi ? '取消多选' : '多选编情景'}
           </button>
+          <button
+            className={`btn ${scanOpen ? 'btn-ghost' : 'btn-plain'} topbar-text-btn`}
+            onClick={() => setScanOpen(!scanOpen)}
+            aria-pressed={scanOpen}
+          >
+            {scanOpen ? '收起扫描' : '相似扫描'}
+          </button>
           <button className="topbar-icon-btn" aria-label="拍照导入生词" onClick={openImport}>＋</button>
         </div>
       </header>
@@ -210,6 +225,35 @@ export default function LibraryPage({ openImport, goTab }) {
             </button>
           ))}
         </div>
+
+        {/* 相似词扫描 */}
+        {scanOpen && (
+          <div className="dup-panel">
+            <div className="dup-head">
+              <b>相似词扫描</b>
+              <span className="num">找到 {dupGroups.length} 组疑似重复</span>
+            </div>
+            {dupGroups.length === 0 ? (
+              <p className="dup-none">没发现相似项（保守策略：只提示明确重复/同释义/同核心词组的词）</p>
+            ) : (
+              <p className="dup-tip">每组按"去掉 a/an/the 后同核心 / 中文释义相同 / 核心词组互相包含"归并。删掉多余的即可。</p>
+            )}
+            {dupGroups.map((g, gi) => (
+              <div key={gi} className="dup-group">
+                <div className="dup-gtitle">组 {gi + 1} · {g.length} 条</div>
+                {g.map((w) => (
+                  <div key={w.id} className="dup-row">
+                    <div className="dup-main">
+                      <b className="h-display">{w.word}</b>
+                      <small>{w.meaningZh || '（无释义）'}</small>
+                    </div>
+                    <button className="dup-del" onClick={() => setConfirmDel(w)} title="删除这条">✕</button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
 
         {words.length === 0 ? (
           <div className="ph" style={{ minHeight: 280 }}>

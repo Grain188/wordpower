@@ -82,3 +82,67 @@ export function pickLocalDistractors(pool, target, n = 3) {
   const picked = sampleN(samePos.length >= n ? samePos : usable, n)
   return picked.map((w) => ({ text: w.meaningZh, origin: 'local', wordNorm: w.wordNorm }))
 }
+
+/* ============================================================
+   相似词/词组扫描（清理"a course of action / a losing course of action"这类变体）
+   保守策略：宁可漏报、不要误杀
+   ============================================================ */
+
+const LEAD_ARTICLES = /^(a|an|the|some|any)\s+/i
+
+/** 去掉首冠词的"核心词形" */
+export function corePhrase(word) {
+  return normalizeWord(String(word || '').replace(LEAD_ARTICLES, ''))
+}
+
+function cleanZh(z) {
+  return String(z || '')
+    .trim()
+    .replace(/[。.;；,，、\s]+$/, '')
+    .toLowerCase()
+}
+
+function similarPair(a, b) {
+  const ca = corePhrase(a.word)
+  const cb = corePhrase(b.word)
+  if (ca === cb) return true // 去掉 a/an/the 后相同
+  const ma = cleanZh(a.meaningZh)
+  const mb = cleanZh(b.meaningZh)
+  if (ma && ma === mb) return true // 中文释义完全一致
+  // 核心短语互相包含（较长含较短），且较短够长 → "a losing course of action" 与 "course of action"
+  const short = ca.length <= cb.length ? ca : cb
+  const long = short === ca ? cb : ca
+  if (short.length >= 8 && long.includes(short)) return true
+  return false
+}
+
+/** 返回疑似重复/近似的"簇"（每簇 ≥2 条）。输入词对象需含 word/wordNorm/meaningZh */
+export function findDupGroups(words) {
+  const list = (words || []).filter((w) => w && w.word)
+  const n = list.length
+  const parent = list.map((_, i) => i)
+  const find = (x) => {
+    while (parent[x] !== x) {
+      parent[x] = parent[parent[x]]
+      x = parent[x]
+    }
+    return x
+  }
+  const union = (x, y) => {
+    const rx = find(x)
+    const ry = find(y)
+    if (rx !== ry) parent[ry] = rx
+  }
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (similarPair(list[i], list[j])) union(i, j)
+    }
+  }
+  const byRoot = new Map()
+  for (let i = 0; i < n; i++) {
+    const r = find(i)
+    if (!byRoot.has(r)) byRoot.set(r, [])
+    byRoot.get(r).push(list[i])
+  }
+  return [...byRoot.values()].filter((g) => g.length >= 2)
+}

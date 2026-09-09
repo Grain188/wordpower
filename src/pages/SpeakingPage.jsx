@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { dueWords, allWords, saveChatSession, recordSpeakingHit } from '../db/repo.js'
+import { dueWords, allWords, saveChatSession, recordSpeakingHit, todayWrongWords } from '../db/repo.js'
 import { setUi, getApiKey } from '../lib/settings.js'
 import { useSettings } from '../hooks/useSettings.js'
 import { asrProvider } from '../speech/asr.js'
@@ -7,6 +7,8 @@ import { ttsProvider, speakEnglish } from '../speech/tts.js'
 import { SCENES, sceneOf, aiReply, buildContext, summarizeChat } from '../api/chat.js'
 import { api } from '../api/client.js'
 import { speakSeq } from '../speech/speechUtil.js'
+import { takeScenarioWords } from '../lib/scenarioIntent.js'
+import ScenarioChat from '../components/scenario/ScenarioChat.jsx'
 import './SpeakingPage.css'
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -47,6 +49,19 @@ export default function SpeakingPage({ openImport, goTab }) {
   const [summary, setSummary] = useState(null)
   const [busy, setBusy] = useState(false) // 等 AI 回复
   const [doneData, setDoneData] = useState(null)
+
+  // 情景对话（错词编剧情）
+  const [scenWords, setScenWords] = useState(null) // 传入 ScenarioChat 的词
+  const [todayWrongs, setTodayWrongs] = useState([]) // 今日情景（自动入口）
+  useEffect(() => {
+    // 手动入口：生词本多选后跳转 → 消费意图
+    const w = takeScenarioWords()
+    if (w && w.length >= 3 && w.length <= 5) setScenWords(w)
+    // 自动入口：今日 Boss 错词 ≥3 才出卡
+    todayWrongWords().then((list) => {
+      if (list && list.length >= 3) setTodayWrongs(list)
+    })
+  }, [])
 
   // 麦克风/输入
   const [listening, setListening] = useState(false)
@@ -276,6 +291,18 @@ export default function SpeakingPage({ openImport, goTab }) {
   const aiNorms = useMemo(() => targets.map((t) => t.wordNorm), [targets])
 
   /* ============================ 渲染 ============================ */
+  // 情景对话模式（手动/自动入口共用的整场对演）
+  if (scenWords) {
+    return (
+      <section className="page speak-page">
+        <header className="topbar">
+          <h1 className="h-display topbar-title">🎭 错词情景对演</h1>
+        </header>
+        <ScenarioChat words={scenWords} onClose={() => setScenWords(null)} goTab={goTab} />
+      </section>
+    )
+  }
+
   if (phase === 'scene') {
     return (
       <section className="page">
@@ -283,6 +310,16 @@ export default function SpeakingPage({ openImport, goTab }) {
           <h1 className="h-display topbar-title">听说</h1>
         </header>
         <div className="pad speak-pad">
+          {/* 自动入口：今日 Boss 错词 ≥3 → 今日情景 */}
+          {todayWrongs.length >= 3 && (
+            <button className="sc-today-card" onClick={() => setScenWords(todayWrongs.slice(0, 5))}>
+              <div className="sc-today-title">🎬 今日情景 · 错词入戏</div>
+              <p className="sc-today-sub">
+                用今天 Boss 战答错的 {todayWrongs.length} 个词编一段剧情对演（取前 5 个）：
+                {todayWrongs.slice(0, 5).map((w) => w.word).join(' · ')}
+              </p>
+            </button>
+          )}
           <p className="speak-sub">选个话题，AI 会把词库里今天到期的词（≤5 个）自然编进对话，陪你开口说英文</p>
           <div className="scene-grid">
             {SCENES.map((s) => (
@@ -297,7 +334,7 @@ export default function SpeakingPage({ openImport, goTab }) {
             ))}
           </div>
           {!hasKey && (
-            <p className="speak-warn">还没配置 API Key：去「我的」填好再来练</p>
+            <p className="speak-warn">还没配置 API Key：去「我的」填好再来练（情景练习也依赖它）</p>
           )}
           <button className="btn btn-primary btn-block" disabled={!hasKey} onClick={startChat}>
             开始对话

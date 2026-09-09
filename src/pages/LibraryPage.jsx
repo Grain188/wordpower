@@ -7,6 +7,7 @@ import {
   takeRecentImported,
 } from '../db/repo.js'
 import { CEFR_LEVELS, THEMES, classifyPos, POS_GROUP_ZH, themeZh } from '../lib/words.js'
+import { setScenarioWords } from '../lib/scenarioIntent.js'
 import WordRow from '../components/WordRow.jsx'
 import EditWordDialog from '../components/EditWordDialog.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -47,6 +48,9 @@ export default function LibraryPage({ openImport, goTab }) {
   const [recentIds, setRecentIds] = useState(() => new Set())
   const [editing, setEditing] = useState(null)
   const [confirmDel, setConfirmDel] = useState(null)
+  // 多选 → 编情景（3-5 个词）
+  const [multi, setMulti] = useState(false)
+  const [selected, setSelected] = useState(() => new Set())
 
   useEffect(() => {
     ;(async () => {
@@ -57,6 +61,29 @@ export default function LibraryPage({ openImport, goTab }) {
       setRecentIds(new Set(takeRecentImported()))
     })()
   }, [])
+
+  function toggleMulti() {
+    setMulti((m) => {
+      const next = !m
+      if (!next) setSelected(new Set())
+      return next
+    })
+  }
+  function toggleSelect(w) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(w.id) ? next.delete(w.id) : next.add(w.id)
+      return next
+    })
+  }
+  function goScenario() {
+    const chosen = words.filter((w) => selected.has(w.id))
+    if (chosen.length < 3 || chosen.length > 5) return
+    setScenarioWords(chosen)
+    setMulti(false)
+    setSelected(new Set())
+    goTab('speaking')
+  }
 
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase()
@@ -120,7 +147,16 @@ export default function LibraryPage({ openImport, goTab }) {
           生词本
           {stats && stats.total > 0 && <span className="lib-count num"> {stats.total}</span>}
         </h1>
-        <button className="topbar-icon-btn" aria-label="拍照导入生词" onClick={openImport}>＋</button>
+        <div className="topbar-actions">
+          <button
+            className={`btn ${multi ? 'btn-ghost' : 'btn-plain'} topbar-text-btn`}
+            onClick={toggleMulti}
+            aria-pressed={multi}
+          >
+            {multi ? '取消多选' : '多选编情景'}
+          </button>
+          <button className="topbar-icon-btn" aria-label="拍照导入生词" onClick={openImport}>＋</button>
+        </div>
       </header>
 
       <div className="pad lib-pad">
@@ -211,6 +247,9 @@ export default function LibraryPage({ openImport, goTab }) {
                         onEdit={(word) => setEditing(word)}
                         onToggleKnown={async (word) => patchWord(await setKnown(word.id, word.known ? 0 : 1))}
                         onAskDelete={(word) => setConfirmDel(word)}
+                        selectable={multi}
+                        selected={selected.has(w.id)}
+                        onToggleSelect={toggleSelect}
                       />
                     ))}
                   </ul>
@@ -218,6 +257,20 @@ export default function LibraryPage({ openImport, goTab }) {
               </div>
             ))}
           </>
+        )}
+
+        {/* 多选操作条：3-5 个词 → 编情景 */}
+        {multi && (
+          <div className="multi-bar">
+            <span className="num">已选 {selected.size} / 3–5 词</span>
+            <button
+              className="btn btn-primary"
+              disabled={selected.size < 3 || selected.size > 5}
+              onClick={goScenario}
+            >
+              🎭 用这 {selected.size} 个词编个情景聊聊
+            </button>
+          </div>
         )}
       </div>
 

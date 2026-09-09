@@ -10,7 +10,17 @@ const ACT = 132 // 滑出的操作区宽度（3 个按钮）
  * 生词行：内容区 + 左滑露出的 [编辑 | 标熟/回退 | 删除]。
  * 触摸用 Pointer Events 横向拖拽（touch-action: pan-y 保证竖向仍可滚动页面）。
  */
-export default function WordRow({ word, recent, delayMs, onEdit, onToggleKnown, onAskDelete }) {
+export default function WordRow({
+  word,
+  recent,
+  delayMs,
+  onEdit,
+  onToggleKnown,
+  onAskDelete,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
+}) {
   const [open, setOpen] = useState(false)
   const cardRef = useRef(null)
   const startRef = useRef(null)
@@ -62,7 +72,16 @@ export default function WordRow({ word, recent, delayMs, onEdit, onToggleKnown, 
   }
 
   return (
-    <li className={`swipe${open ? ' open' : ''}${word.known ? ' row-known' : ''}`}>
+    <li className={`swipe${open ? ' open' : ''}${word.known ? ' row-known' : ''}${selectable ? ' has-sel' : ''}`}>
+      {selectable && (
+        <button
+          className={`sel-btn${selected ? ' on' : ''}`}
+          aria-pressed={selected}
+          onClick={(e) => { e.stopPropagation(); onToggleSelect?.(word) }}
+        >
+          {selected ? '✓' : ''}
+        </button>
+      )}
       <div className="swipe-actions" aria-hidden="true">
         <button className="sa-btn sa-edit" onClick={() => { setOpen(false); onEdit(word) }}>
           ✏️<span>编辑</span>

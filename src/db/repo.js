@@ -349,11 +349,44 @@ export async function recentChatSessions(limit = 20) {
 }
 
 /* ============================================================
+   情景对话（错词编剧情）：今日错词 / 按词组缓存情景卡
+   ============================================================ */
+
+/** 今天的错词（boss 评分 AGAIN 的词）→ 词记录数组（自动入口的"今日情景"取 3-5 个） */
+export async function todayWrongWords() {
+  const rows = await db.reviews
+    .where('date')
+    .equals(todayKey())
+    .filter((r) => r.rating === 1)
+    .toArray()
+  const ids = [...new Set(rows.map((r) => r.wordId))]
+  if (!ids.length) return []
+  const words = await db.words.bulkGet(ids)
+  return words.filter((w) => w && !w.known)
+}
+
+/** 按 id 取词（生词本多选 → 编情景） */
+export async function wordsByIds(ids) {
+  if (!ids?.length) return []
+  const words = await db.words.bulkGet(ids)
+  return words.filter(Boolean)
+}
+
+export async function getScenarioCache(groupKey) {
+  return db.scenarioCache.where('groupKey').equals(groupKey).first()
+}
+
+export async function putScenarioCache(groupKey, payload) {
+  await db.scenarioCache.put({ groupKey, payload, createdAt: Date.now() })
+  return payload
+}
+
+/* ============================================================
    JSON 备份（E2）：全量导出/导入。导入用 bulkPut 保留原主键，
    使 reviews.wordId / chat_sessions.targetWordIds 的关联不断裂。
    ============================================================ */
 
-export const BACKUP_TABLES = ['words', 'checkins', 'reviews', 'distractors', 'chat_sessions', 'usage']
+export const BACKUP_TABLES = ['words', 'checkins', 'reviews', 'distractors', 'chat_sessions', 'usage', 'scenarioCache']
 
 export async function exportSnapshot() {
   const out = {}

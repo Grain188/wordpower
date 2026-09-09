@@ -201,7 +201,10 @@ export default function StatsPage() {
               ) : (
                 <ul className="chat-history">
                   {chats.map((s) => {
-                    const sc = sceneOf(s.scene)
+                    const isScen = String(s.scene || '').startsWith('scen::')
+                    const sc = isScen
+                      ? { icon: '🎭', zh: String(s.scene).slice(6) || '情景' }
+                      : sceneOf(s.scene)
                     const aiLines = (s.rounds || [])
                       .filter((r) => r.role === 'ai' && !r.error && r.content)
                       .map((r) => r.content)

@@ -1,0 +1,92 @@
+/* ScenarioChat.css —— 错词情景对演（复用 controls/Speaking 基础类，这里只补专属样式） */
+.sc-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.sc-panel { padding: var(--space-5) var(--space-4); }
+
+.sc-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-5) 0;
+}
+.sc-intro h2 { margin: 0; }
+.sc-brief { color: var(--color-text); font-size: 15px; line-height: 1.7; margin: 0; }
+.sc-roles {
+  width: 100%;
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  text-align: left;
+}
+.sc-words-note { color: var(--text-sub); font-size: 12px; line-height: 1.8; }
+
+.sc-chat { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sc-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  font-size: 14px;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--bg-card);
+}
+.sc-chat-head span { font-size: 11px; color: var(--text-sub); }
+.sc-list { flex: 1; min-height: 260px; }
+
+.sc-hint {
+  align-self: center;
+  max-width: 86%;
+  background: var(--tint-yellow);
+  color: #6b4d00;
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+[data-theme='dark'] .sc-hint { color: var(--color-energy); }
+
+.sc-listen {
+  margin-top: 6px;
+  background: none;
+  border: 0;
+  font-size: 13px;
+}
+
+.sc-settle { padding-top: var(--space-4); }
+.sc-status {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sc-status li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 14px;
+}
+.sc-status li span:first-child { font-size: 15px; width: 18px; }
+.sc-status b { font-family: var(--font-display); min-width: 84px; text-align: left; }
+.sc-status .num { color: var(--text-sub); font-size: 12px; flex: 1; text-align: left; }
+.sc-status em { font-style: normal; font-size: 11px; font-weight: 700; }
+.sc-status-ok em { color: var(--color-primary); }
+.sc-status-warn em { color: #9a7b00; }
+.sc-status-miss em { color: var(--color-danger); }
+[data-theme='dark'] .sc-status-warn em { color: var(--color-energy); }
+.sc-epilogue { color: var(--text-sub); font-size: 13px; line-height: 1.8; }

@@ -106,3 +106,24 @@
   background: var(--tint-blue);
   border-color: transparent;
 }
+
+/* 多选模式勾选钮（生词本 → 编情景） */
+.sel-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  background: var(--bg-card);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sel-btn.on { background: var(--color-accent); }
+.swipe.has-sel .word-card { padding-left: 40px; }

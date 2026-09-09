@@ -243,3 +243,19 @@
   width: fit-content;
 }
 .stop-btn.inline { margin-top: 6px; }
+
+/* 今日情景（自动入口卡） */
+.sc-today-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: var(--tint-yellow);
+  border: 2px solid var(--color-energy);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--color-energy) 60%, transparent);
+}
+.sc-today-title { font-family: var(--font-display); font-weight: 900; font-size: 16px; color: var(--on-energy); }
+.sc-today-sub { margin: 0; font-size: 12px; color: var(--text-sub); line-height: 1.7; }
+

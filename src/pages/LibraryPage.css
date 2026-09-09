@@ -1,6 +1,27 @@
-/* LibraryPage.css —�?生词�?*/
+/* LibraryPage.css — 生词本 */
 .lib-pad { display: flex; flex-direction: column; gap: var(--space-3); }
 .lib-count { font-size: 14px; color: var(--text-sub); font-weight: 700; margin-left: 2px; }
+
+.topbar-actions { display: flex; align-items: center; gap: 6px; }
+.topbar-text-btn { min-height: 40px; padding: 6px 12px; font-size: 13px; border-radius: var(--radius-full); }
+
+/* 多选操作条 */
+.multi-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-3);
+  box-shadow: 0 -4px 16px var(--shadow);
+  margin-top: var(--space-2);
+}
+.multi-bar span { color: var(--text-sub); font-size: 12px; font-weight: 700; }
 
 /* 统计�?*/
 .lib-stats {

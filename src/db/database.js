@@ -24,6 +24,17 @@ db.version(1).stores({
   usage: '++id, ts, task, model',
 })
 
+// v2：情景对话 —— 情景卡缓存（同一组词不重复生成，省 token）
+db.version(2).stores({
+  words: '++id, &wordNorm, cefr, theme, pos, source, known, due, createdAt',
+  distractors: '&word, dueDate',
+  checkins: '&date',
+  reviews: '++id, wordId, date, mode',
+  chat_sessions: '++id, startedAt, scene',
+  usage: '++id, ts, task, model',
+  scenarioCache: '&groupKey, createdAt',
+})
+
 export async function resetDb() {
   await db.delete()
   await db.open()

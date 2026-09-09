@@ -55,7 +55,19 @@ assert.equal(items[0].cefr, 'B1')
 assert.equal(items[1].cefr, 'C1', 'cefr_level/cefr 变体都接受')
 assert.equal(items[1].meaningZh, '模糊的')
 
-const many = normalizeItems({ words: Array.from({ length: 50 }, (_, i) => ({ word: `w${i}`, meaning_zh: `义${i}` })) })
+// 50 个纯字母不同词（w0 会撞"含数字=噪音"过滤，这里生成无数字的）
+const lettersOf = (n) => {
+  let s = ''
+  let v = n
+  do {
+    s = String.fromCharCode(97 + (v % 26)) + s
+    v = Math.floor(v / 26) - 1
+  } while (v >= 0)
+  return s
+}
+const many = normalizeItems({
+  words: Array.from({ length: 50 }, (_, i) => ({ word: lettersOf(i + 26), meaning_zh: `义${i}` })),
+})
 assert.equal(many.length, MAX_OCR_ITEMS, '超过 40 个截断')
 
 // —— 粘贴文本判定 / 本地降级 ——

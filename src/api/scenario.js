@@ -3,10 +3,10 @@ import { api, parseJsonContent, modelOf } from './client.js'
 import { getScenarioCache, putScenarioCache } from '../db/repo.js'
 import { normalizeWord } from '../lib/words.js'
 
-/** 情景卡生成输出上限（规格：≤300） */
-export const SCENARIO_GEN_TOKENS = 300
-/** 情景对话每轮回复上限（bilingual JSON + ≤25 词英文） */
-export const SCENARIO_REPLY_TOKENS = 140
+/** 情景卡生成输出上限（模型带 reasoning，需留思考链余量） */
+export const SCENARIO_GEN_TOKENS = 800
+/** 情景对话每轮回复上限（思考链 + bilingual JSON） */
+export const SCENARIO_REPLY_TOKENS = 512
 /** 一局最长 AI 轮数 */
 export const SCENARIO_MAX_ROUNDS = 12
 

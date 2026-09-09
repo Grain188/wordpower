@@ -256,7 +256,7 @@ export default function SpeakingPage({ openImport, goTab }) {
             { role: 'system', content: '你是口语教练。基于用户真实输出给 2-3 句中文点评（肯定优点+指出 1 个改进点），≤50 词，不输出标题。' },
             { role: 'user', content: `目标词: ${targets.map((t) => t.word).join(', ')}。已正确使用: ${usedWords.map((w) => w.word).join(', ') || '无'}。用户说的话: ${transcript}` },
           ],
-          maxTokens: 120,
+          maxTokens: 360,
           task: 'chat',
           hint: '口语点评',
         })

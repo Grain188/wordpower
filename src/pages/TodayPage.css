@@ -17,7 +17,7 @@
   background: var(--bg-card);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   min-width: 0;
 }
 .streak-box .flame-pulse { animation: flame-pulse 1.4s ease-in-out infinite; }
@@ -26,7 +26,7 @@
   flex-direction: column;
   line-height: 1.15;
 }
-.streak-days { font-size: 26px; }
+.streak-days { font-size: 22px; }
 .streak-nums span { font-size: 11px; color: var(--text-sub); font-weight: 700; }
 .mini-flames {
   display: flex;

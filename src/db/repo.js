@@ -98,7 +98,14 @@ export async function deleteWord(id) {
 export async function dueWords({ limit } = {}) {
   const end = endOfDay().getTime()
   const rows = await db.words.where('due').belowOrEqual(end).toArray()
-  const due = rows.filter((w) => !w.known).sort((a, b) => a.due - b.due)
+  const due = rows
+    .filter((w) => !w.known)
+    // 默认顺序：先到期、同类内"单词优先于词组"（词组靠后，复习/Boss/口语选词一致）
+    .sort((a, b) => {
+      const ka = /\s/.test(a.wordNorm || a.word || '') ? 1 : 0
+      const kb = /\s/.test(b.wordNorm || b.word || '') ? 1 : 0
+      return ka - kb || a.due - b.due
+    })
   return typeof limit === 'number' ? due.slice(0, limit) : due
 }
 

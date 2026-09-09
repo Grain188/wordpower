@@ -1,0 +1,10 @@
+{
+  "model": "deepseek-v4-flash",
+  "max_tokens": 800,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Create one short role-play scenario for these English words: interview, luggage, discount. Output ONLY this JSON, no extra text: {\"title\":\"Chinese title\",\"scene_brief_cn\":\"one Chinese sentence of plot\",\"your_role\":\"english role\",\"npc_role\":\"english role\",\"npc_persona\":\"short english persona\",\"opening_line\":\"english line <= 40 words that uses the first word\"}. Scene must fit the word meanings. Reply now."
+    }
+  ]
+}

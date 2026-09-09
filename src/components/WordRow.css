@@ -100,3 +100,9 @@
   background: var(--tint-red);
   border-color: transparent;
 }
+/* 新词待学（非逾期） */
+.tag-fresh {
+  color: var(--color-accent);
+  background: var(--tint-blue);
+  border-color: transparent;
+}

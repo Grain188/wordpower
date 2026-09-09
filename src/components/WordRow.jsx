@@ -19,7 +19,10 @@ export default function WordRow({ word, recent, delayMs, onEdit, onToggleKnown, 
   openRef.current = open
 
   const dueMs = word.due || 0
-  const overdue = !word.known && dueMs < Date.now()
+  // 是否还没学过的新词（FSRS New 状态 / 从未复习）
+  const isFresh = !word.fsrs || word.fsrs.state === 0 || !word.lastReviewAt
+  // 只有"学过且过了到期日"才算逾期；新词显示"今日新学"而不是刺眼的已到期
+  const overdue = !word.known && !isFresh && dueMs < Date.now()
 
   function onPointerDown(e) {
     if (e.button !== 0) return
@@ -109,8 +112,10 @@ export default function WordRow({ word, recent, delayMs, onEdit, onToggleKnown, 
           {word.known ? (
             <span className="tag tag-energy">已掌握</span>
           ) : (
-            <span className={`tag${overdue ? ' tag-overdue' : ''}`}>
-              {overdue ? '已到期' : `复习 ${formatDueShort(dueMs)}`}
+            <span
+              className={`tag${overdue ? ' tag-overdue' : ''}${isFresh ? ' tag-fresh' : ''}`}
+            >
+              {isFresh ? '今日新学' : overdue ? '已到期' : `复习 ${formatDueShort(dueMs)}`}
             </span>
           )}
         </div>

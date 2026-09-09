@@ -22,24 +22,29 @@ const GEN_PROMPT = (words) => {
   const list = words
     .map((w) => `${w.word}（${w.meaningZh || '?'}${w.pos ? `，${w.pos}` : ''}）`)
     .join('；')
-  return `把以下英文生词编进一段连贯的生活情景剧情，用于"口语对演练习"（用户扮演当事人，AI 扮演 NPC）。
-生词（含中文释义与词性，构思场景时请以它们的语义为准，选最贴切的地点/人物/事件，而不是套用通用场景）：
+  return `把以下英文生词/词组编进一段连贯的生活情景剧情，用于"口语对演练习"（用户扮演当事人，AI 扮演 NPC）。
+生词（含中文释义，构思场景请以语义为准，选贴切的地点/人物/事件，不要套通用场景）：
 ${list}
 
-硬性要求：
-1. 必须让每个词在剧情里承担"符合它语义"的戏份（地点/道具/对白都从词义长出来），所有词编进同一段连贯剧情（时间/地点/人物自洽、有起因经过冲突），严禁像清单一样罗列。
-2. 明确角色扮演：为"你"和"NPC"各设一个有代入感的身份（职务/立场），让剧情围绕两人的目标与冲突推进。
-3. beats 数量 = 生词数量，每个词至少一次"必须由用户说出"的出场时机，节点与剧情因果相连。
-4. opening_line 是 NPC 开场白，英文 ≤40 词，自然带出第一个目标词。
+要求：
+1. 让每个词在剧情里承担符合语义的戏份；所有词编进同一段连贯剧情（时间地点人物自洽、有起因经过），严禁清单罗列。
+2. 明确角色扮演：给"你"和"NPC"各有代入感的身份，剧情围绕两人目标与冲突推进。
+3. opening_line 是 NPC 开场白（英文 ≤40 词），自然带出第一个目标词。
 
-只输出 JSON：{"title":"中文情景标题（点出场景与冲突）","scene_brief_cn":"30 字中文剧情简介（开场播报用）","your_role":"用户角色(英文,如 a job candidate)","npc_role":"AI 角色(英文,如 a strict interviewer)","npc_persona":"NPC 人设一句话(英文,影响语气)","opening_line":"英文 ≤40 词开场白","target_words":["仅这 ${words.length} 个词，小写原形"],"beats":[{"beat_cn":"剧情节点中文","must_use":"该节点要用的词"}]}
-beats 长度必须等于 ${words.length}，must_use 覆盖全部 target_words。`
+不需要思考过程，直接只输出 JSON：
+{"title":"中文情景标题","scene_brief_cn":"30 字中文简介","your_role":"英文角色","npc_role":"英文角色","npc_persona":"英文人设一句","opening_line":"英文开场白 ≤40 词"}`
+}
+
+/** 若模型没给 beats，用本地按词生成的节拍兜底（每词一句"自然说出"） */
+function localBeats(norms) {
+  return norms.map((w) => ({ beat_cn: `自然说出 ${w}`, must_use: w }))
 }
 
 function sanitize(scenario, words) {
   const s = scenario || {}
   const norms = words.map((w) => normalizeWord(w?.word))
   const title = String(s.title || '').trim() || '情景练习'
+  const aiBeats = Array.isArray(s.beats) ? s.beats.filter((b) => b && b.must_use) : []
   return {
     title,
     scene_brief_cn: String(s.scene_brief_cn || '').trim(),
@@ -48,7 +53,11 @@ function sanitize(scenario, words) {
     npc_persona: String(s.npc_persona || 'friendly').trim(),
     opening_line: String(s.opening_line || '').trim(),
     target_words: norms, // 以实际传入的词为准，防模型丢词
-    beats: Array.isArray(s.beats) ? s.beats.slice(0, norms.length + 2) : [],
+    // 模型给的不够就补本地节拍，保证每个词都有出场时机
+    beats:
+      aiBeats.length >= norms.length
+        ? aiBeats.slice(0, norms.length + 2)
+        : localBeats(norms),
   }
 }
 

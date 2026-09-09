@@ -83,6 +83,20 @@ export function pickLocalDistractors(pool, target, n = 3) {
   return picked.map((w) => ({ text: w.meaningZh, origin: 'local', wordNorm: w.wordNorm }))
 }
 
+/** 是否带空格的多词"词组"（如 a course of action；连字符 well-known 视为单词） */
+export function isPhraseWord(word) {
+  return /\s/.test(normalizeWord(word || ''))
+}
+
+/** 词的类型：'word' | 'phrase'（生词本「类型」分组用） */
+export function wordKind(w) {
+  return isPhraseWord(w?.word) ? 'phrase' : 'word'
+}
+
+export function kindZh(k) {
+  return k === 'phrase' ? '词组' : '单词'
+}
+
 /* ============================================================
    相似词/词组扫描（清理"a course of action / a losing course of action"这类变体）
    保守策略：宁可漏报、不要误杀

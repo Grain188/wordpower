@@ -1,6 +1,6 @@
 // 相似词扫描冒烟（findDupGroups 纯函数）
 import assert from 'node:assert/strict'
-import { findDupGroups, corePhrase } from '../src/lib/words.js'
+import { findDupGroups, corePhrase, isPhraseWord, wordKind } from '../src/lib/words.js'
 
 assert.equal(corePhrase('a course of action'), 'course of action', '去首冠词')
 assert.equal(corePhrase('the best time'), 'best time')
@@ -18,5 +18,10 @@ const flat = groups.map((g) => g.map((w) => w.id).sort()).sort((a, b) => a[0] - 
 assert.deepEqual(flat[0], [1, 2], '核心词组互相包含成组')
 assert.deepEqual(flat[1], [3, 4], '中文释义相同成组')
 assert.ok(!groups.some((g) => g.some((w) => w.id === 5)), 'banana 不应入组')
+
+assert.equal(isPhraseWord('a course of action'), true, '多词含空格=词组')
+assert.equal(isPhraseWord('well-known'), false, '连字符视为单词')
+assert.equal(wordKind({ word: 'look up' }), 'phrase')
+assert.equal(wordKind({ word: 'banana' }), 'word')
 
 console.log('✅ dup smoke: 相似扫描断言通过')

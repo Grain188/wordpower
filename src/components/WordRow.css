@@ -108,8 +108,7 @@
 }
 
 /* 多选模式勾选钮（生词本 → 编情景） */
-.sel-btn {
-  position: absolute;
+.sel-btn {  position: absolute;
   top: 8px;
   left: 8px;
   z-index: 6;
@@ -127,3 +126,10 @@
 }
 .sel-btn.on { background: var(--color-accent); }
 .swipe.has-sel .word-card { padding-left: 40px; }
+
+/* 词组标签 */
+.tag-phrase {
+  color: var(--color-accent);
+  background: var(--tint-blue);
+  border-color: transparent;
+}

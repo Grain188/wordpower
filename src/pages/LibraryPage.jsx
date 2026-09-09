@@ -6,7 +6,16 @@ import {
   deleteWord,
   takeRecentImported,
 } from '../db/repo.js'
-import { CEFR_LEVELS, THEMES, classifyPos, POS_GROUP_ZH, themeZh, findDupGroups } from '../lib/words.js'
+import {
+  CEFR_LEVELS,
+  THEMES,
+  classifyPos,
+  POS_GROUP_ZH,
+  themeZh,
+  findDupGroups,
+  wordKind,
+  kindZh,
+} from '../lib/words.js'
 import { setScenarioWords } from '../lib/scenarioIntent.js'
 import WordRow from '../components/WordRow.jsx'
 import EditWordDialog from '../components/EditWordDialog.jsx'
@@ -16,25 +25,30 @@ import './LibraryPage.css'
 const DIMS = [
   { id: 'cefr', zh: '难度' },
   { id: 'pos', zh: '词性' },
+  { id: 'kind', zh: '类型' },
   { id: 'theme', zh: '主题' },
 ]
 const CEFR_ORDER = [...CEFR_LEVELS, '']
 const POS_ORDER = ['noun', 'verb', 'adj', 'adv', 'prep', 'conj', 'pron', 'other']
 const THEME_ORDER = [...THEMES.map((t) => t.id), '']
+const KIND_ORDER = ['word', 'phrase']
 
 function dimKey(dim, w) {
   if (dim === 'cefr') return w.cefr || ''
   if (dim === 'pos') return classifyPos(w.pos)
+  if (dim === 'kind') return wordKind(w) // 单词 / 词组
   return w.theme || ''
 }
 function dimLabel(dim, k) {
   if (dim === 'cefr') return k || '未分级'
   if (dim === 'pos') return POS_GROUP_ZH[k] || k
+  if (dim === 'kind') return kindZh(k)
   return k ? themeZh(k) || k : '未分类'
 }
 function dimOrder(dim) {
   if (dim === 'cefr') return CEFR_ORDER
   if (dim === 'pos') return POS_ORDER
+  if (dim === 'kind') return KIND_ORDER
   return THEME_ORDER
 }
 

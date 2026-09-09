@@ -127,6 +127,7 @@ export default function WordRow({
         </div>
         <div className="wc-meaning">{word.meaningZh || <i>（暂无释义，点编辑补充）</i>}</div>
         <div className="wc-meta">
+          {/\s/.test(word.word) && <span className="tag tag-phrase">词组</span>}
           {word.theme && <span className="tag">{themeZh(word.theme) || word.theme}</span>}
           {word.known ? (
             <span className="tag tag-energy">已掌握</span>

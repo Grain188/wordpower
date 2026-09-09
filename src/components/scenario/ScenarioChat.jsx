@@ -19,16 +19,27 @@ async function scenarioReply(scenario, rounds) {
       msgs.push({ role: r.role === 'user' ? 'user' : 'assistant', content: r.content })
     }
   }
-  const { content } = await api.complete({
-    messages: msgs,
-    json: false,
-    maxTokens: 140,
-    temperature: 0.8,
-    task: 'chat',
-    hint: '情景对演',
-  })
-  const parsed = parseJsonContent(content, '情景对演')
-  return { en: String(parsed?.en || '').trim(), zh: String(parsed?.zh || '').trim() }
+  // 偶发空返回 → 重试一次
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const { content } = await api.complete({
+        messages: msgs,
+        json: false,
+        maxTokens: 140,
+        temperature: 0.8 + attempt * 0.15,
+        task: 'chat',
+        hint: attempt > 1 ? '情景对演·重试' : '情景对演',
+      })
+      if (!content) throw new Error('empty')
+      const parsed = parseJsonContent(content, '情景对演')
+      const en = String(parsed?.en || '').trim()
+      if (en) return { en, zh: String(parsed?.zh || '').trim() }
+      throw new Error('no-en')
+    } catch {
+      /* retry */
+    }
+  }
+  throw new Error('NPC 连续两次回复失败，请稍后重试')
 }
 
 export default function ScenarioChat({ words, onClose, goTab }) {

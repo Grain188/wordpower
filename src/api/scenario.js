@@ -46,30 +46,61 @@ function sanitize(scenario, words) {
 }
 
 async function generateScenario(words) {
-  const { content } = await api.complete({
-    model: modelOf('text'),
-    messages: [
-      {
-        role: 'user',
-        content: GEN_PROMPT(words.map((w) => w.word)),
-      },
-    ],
-    json: false, // 容错解析
-    maxTokens: SCENARIO_GEN_TOKENS,
-    task: 'chat',
-    hint: '情景卡生成',
-  })
-  return sanitize(parseJsonContent(content, '情景卡生成'), words)
+  // 偶发"空返回"：最多重试 3 次（换一点温度），仍失败再抛错（由调用方落本地兜底卡）
+  let lastErr = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { content } = await api.complete({
+        model: modelOf('text'),
+        messages: [
+          {
+            role: 'user',
+            content: GEN_PROMPT(words.map((w) => w.word)),
+          },
+        ],
+        json: false, // 容错解析（不用 json_object，个别模型会空）
+        maxTokens: SCENARIO_GEN_TOKENS,
+        temperature: attempt === 1 ? 0.9 : 1.1,
+        task: 'chat',
+        hint: `情景卡生成${attempt > 1 ? `·重试${attempt}` : ''}`,
+      })
+      if (!content) throw new Error('empty')
+      return sanitize(parseJsonContent(content, '情景卡生成'), words)
+    } catch (e) {
+      lastErr = e
+    }
+  }
+  throw lastErr || new Error('情景卡生成失败')
 }
 
-/** 取情景卡：同一组词已生成过 → 直接返回缓存（省 token） */
+/** 本地兜底情景卡：AI 不可用时也保证能用（模板化、可对话） */
+export function buildFallbackScenario(words) {
+  const norms = words.map((w) => normalizeWord(w?.word))
+  const first = norms[0] || 'conversation'
+  return {
+    title: '错词练习小剧场',
+    scene_brief_cn: '你与老友在咖啡馆重逢，聊起近况；把生词自然说进你们的对话。',
+    your_role: 'a friend catching up over coffee',
+    npc_role: 'an old friend',
+    npc_persona: 'warm and curious',
+    opening_line: `It has been months since we last met! I remember you were practicing "${first}" back then. How would you use it naturally today?`,
+    target_words: norms,
+    beats: norms.map((w) => ({ beat_cn: `自然说出 ${w}`, must_use: w })),
+  }
+}
+
+/** 取情景卡：同一组词已生成过 → 直接返回缓存；AI 失败 → 本地兜底卡（不缓存，下次可再试 AI） */
 export async function getOrCreateScenario(words) {
   const key = scenarioGroupKey(words)
   const cached = await getScenarioCache(key)
   if (cached?.payload) return cached.payload
-  const scenario = await generateScenario(words)
-  await putScenarioCache(key, scenario).catch(() => {})
-  return scenario
+  try {
+    const scenario = await generateScenario(words)
+    await putScenarioCache(key, scenario).catch(() => {})
+    return scenario
+  } catch {
+    return buildFallbackScenario(words)
+  }
 }
 
 /** 情景对话 system prompt（对演规则注入） */

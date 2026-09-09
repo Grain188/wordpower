@@ -93,7 +93,12 @@ export default function ProfilePage() {
       textModel: textModel.trim(),
     })
     try {
-      await api.complete({ messages: [{ role: 'user', content: 'ping' }], maxTokens: 1, task: 'chat' })
+      const r = await api.complete({
+        messages: [{ role: 'user', content: 'Reply with exactly: OK' }],
+        maxTokens: 16,
+        task: 'chat',
+      })
+      if (!(r.content || '').trim()) throw new ApiError('bad', '连接通过但模型返回空内容——请核对「文本模型」名是否真实可用')
       setTestState('ok')
       setTestMsg('连接正常 ✓')
     } catch (e) {

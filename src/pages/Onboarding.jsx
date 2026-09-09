@@ -44,8 +44,13 @@ export default function Onboarding({ onTryImport, onSkip }) {
     // 不先保存会拿空 Key 请求，误报「Key 无效」（而你的 Key 其实没问题）。
     setSettings({ apiKey: key, endpointMode, workerUrl: workerUrl.trim() })
     try {
-      // 1 token 的探活请求（task='chat'，费用可忽略；顺带验证记账链路）
-      await api.complete({ messages: [{ role: 'user', content: 'ping' }], maxTokens: 1, task: 'chat' })
+      // 探活：要求模型真的返回一段内容（只验 HTTP 200 会漏掉"空返回"的坏模型）
+      const r = await api.complete({
+        messages: [{ role: 'user', content: 'Reply with exactly: OK' }],
+        maxTokens: 16,
+        task: 'chat',
+      })
+      if (!(r.content || '').trim()) throw new ApiError('bad', '连接通过但模型返回空内容——请核对「文本模型」名是否真实可用')
       setStatus('ok')
     } catch (e) {
       setStatus('err')

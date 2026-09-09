@@ -182,7 +182,15 @@ export function createApiClient({ settings = getSettings, fetchFn = globalThis.f
       }).catch(() => {}) // 记账失败不影响主流程
     }
 
-    const content = data?.choices?.[0]?.message?.content ?? ''
+    const msg = data?.choices?.[0]?.message || {}
+    const content = msg.content ?? ''
+    if (!String(content || '').trim() && data?.choices?.length) {
+      // 200 但内容为空：多为所选模型对当前任务返回空（或上游被限）
+      throw new ApiError('bad', `模型返回空内容（${hint}）。常见原因：所选模型不可用/不支持该任务 —— 请在「我的 → API 设置」核对「文本模型/视觉模型」的模型名是否与你账号一致`, {
+        status: res.status,
+        detail: { messageKeys: Object.keys(msg) },
+      })
+    }
     if (json) return { content, parsed: parseJsonContent(content, hint), usage }
     return { content, usage }
   }

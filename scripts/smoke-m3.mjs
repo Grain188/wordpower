@@ -80,4 +80,13 @@ assert.throws(() => parseJsonContent('完全没有 json'), undefined, '真无 JS
 assert.equal(normalizeItems([{ word: 'array-mode', meaningZh: 'x' }]).length, 1, '直接数组也接受')
 assert.equal(normalizeItems({ Words: [{ word: 'caps', meaningZh: 'x' }] }).length, 1, '大小写键兼容')
 
+// —— 文档导入：长文本分块（docparse 纯函数）——
+import { splitForAnnotate } from '../src/lib/docparse.js'
+const longText = Array.from({ length: 2000 }, (_, i) => `token${i} alpha beta`).join('\n')
+const segs = splitForAnnotate(longText)
+assert.ok(segs.length > 1, '长文本应分多块')
+assert.ok(segs.every((s) => s.length <= 3800), '每块不超上限')
+assert.ok(segs[0].startsWith('token0'), '第一块以开头开始')
+assert.ok(segs[segs.length - 1].includes('token1999'), '末块包含结尾内容')
+
 console.log('✅ M3 smoke: 图片/OCR 纯函数全部断言通过')

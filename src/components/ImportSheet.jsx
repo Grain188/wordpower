@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { compressImageFile } from '../lib/image.js'
+import { fileToText, splitForAnnotate } from '../lib/docparse.js'
 import {
   extractWordsFromImage,
   annotatePastedText,
@@ -7,7 +8,7 @@ import {
 } from '../api/ocr.js'
 import { importWords, noteImported } from '../db/repo.js'
 import { ApiError } from '../api/client.js'
-import { themeZh } from '../lib/words.js'
+import { themeZh, normalizeWord } from '../lib/words.js'
 import './ImportSheet.css'
 
 /**
@@ -17,9 +18,10 @@ import './ImportSheet.css'
 export default function ImportSheet({ open, onClose, goTab }) {
   const camRef = useRef(null)
   const fileRef = useRef(null)
+  const docRef = useRef(null)
   const [phase, setPhase] = useState('pick') // pick | busy | error | confirm | done
   const [busyLabel, setBusyLabel] = useState('')
-  const [mode, setMode] = useState('photo') // photo | paste
+  const [mode, setMode] = useState('photo') // photo | paste | doc
   const [items, setItems] = useState([])
   const [payload, setPayload] = useState(null) // 供重试：{type:'image',dataUrl} | {type:'text',text}
   const [canDegrade, setCanDegrade] = useState(false)
@@ -78,17 +80,30 @@ export default function ImportSheet({ open, onClose, goTab }) {
   }
 
   function toConfirm(list, srcMode) {
-    if (!list.length) {
+    // 跨块/跨来源去重（按归一化词形），避免确认列表出现重复词
+    const seen = new Set()
+    const unique = []
+    for (const it of list || []) {
+      const n = normalizeWord(it?.word)
+      if (!n || seen.has(n)) continue
+      seen.add(n)
+      unique.push(it)
+    }
+    if (!unique.length) {
       setError({
         title: '没有识别到可导入的词',
-        msg: '图片可换更清晰/对准文字重拍；或改用「粘贴文本」通道',
+        msg: srcMode === 'doc'
+          ? '文档里没有抽到英文单词；扫描版 PDF 请改用「拍照/粘贴文本」通道'
+          : '图片可换更清晰/对准文字重拍；或改用「粘贴文本」通道',
       })
       setCanDegrade(false)
       setPhase('error')
       return
     }
     setMode(srcMode)
-    setItems(list.map((it, i) => ({ ...it, key: i, skip: false, drop: false })))
+    // 一次确认列表最多展示 150 个（防长文档刷屏；余量可再导）
+    const capped = unique.slice(0, 150)
+    setItems(capped.map((it, i) => ({ ...it, key: i, skip: false, drop: false })))
     setPhase('confirm')
   }
 
@@ -118,13 +133,39 @@ export default function ImportSheet({ open, onClose, goTab }) {
   }
 
   function degradeToLocal() {
-    const list = extractLocalWords(pasteText)
+    const text = payload?.type === 'text' ? payload.text : pasteText
+    const list = extractLocalWords(text)
     if (!list.length) {
-      setError({ title: '文本里没有英文单词', msg: '请粘贴包含英文单词的内容' })
+      setError({ title: '文本里没有英文单词', msg: '请换成包含英文单词的内容' })
       setPhase('error')
       return
     }
-    toConfirm(list, 'paste')
+    toConfirm(list, payload?.type === 'text' && mode === 'doc' ? 'doc' : 'paste')
+  }
+
+  /** 文档通道：分块交给文本模型整理（一次一块，仍是批量请求），跨块由 toConfirm 去重 */
+  async function docToItems(text) {
+    const segs = splitForAnnotate(text)
+    const all = []
+    for (let i = 0; i < segs.length; i++) {
+      setBusyLabel(`AI 整理中…（第 ${i + 1}/${segs.length} 段）`)
+      const list = await annotatePastedText(segs[i])
+      all.push(...list)
+    }
+    return all
+  }
+
+  async function handleDocument(file) {
+    if (!file) return
+    setMode('doc')
+    setCanDegrade(false)
+    await runBusy('解析文档…', async () => {
+      const { text } = await fileToText(file)
+      if (!text.trim()) throw new Error('文档里没有可提取的文字')
+      setPayload({ type: 'text', text })
+      const list = await docToItems(text)
+      toConfirm(list, 'doc')
+    })
   }
 
   async function doImport() {
@@ -133,7 +174,7 @@ export default function ImportSheet({ open, onClose, goTab }) {
     setPhase('busy')
     setBusyLabel('写入生词本…')
     try {
-      const res = await importWords(keep, { source: mode === 'photo' ? 'photo' : 'paste' })
+      const res = await importWords(keep, { source: mode === 'photo' ? 'photo' : mode === 'doc' ? 'doc' : 'paste' })
       noteImported(res.added.map((a) => a.id))
       setSummary({
         addedWords: res.added.map((a) => a.word),
@@ -153,7 +194,14 @@ export default function ImportSheet({ open, onClose, goTab }) {
   return (
     <div className="sheet-mask" role="dialog" aria-modal="true" aria-label="导入生词">
       <div className="sheet" onDragOver={(e) => { e.preventDefault(); if (phase === 'pick') e.dataTransfer.dropEffect = 'copy' }}
-        onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f && phase === 'pick') handleFile(f) }}>
+        onDrop={(e) => {
+          e.preventDefault()
+          const f = e.dataTransfer.files?.[0]
+          if (!f || phase !== 'pick') return
+          const isImage = (f.type || '').startsWith('image/')
+          if (isImage) handleFile(f)
+          else handleDocument(f)
+        }}>
         <div className="sheet-head">
           <h3 className="h-display sheet-title">拍照导入</h3>
           {phase !== 'busy' && (
@@ -163,7 +211,7 @@ export default function ImportSheet({ open, onClose, goTab }) {
 
         {phase === 'pick' && pickView === 'main' && (
           <div className="sheet-body">
-            <p className="sheet-sub">拍课本/打印材料，或粘贴安卓本地 OCR 的文字，自动整理成词卡</p>
+            <p className="sheet-sub">拍照 / 图片 / 文档 / 粘贴文本，四条路进同一个确认列表</p>
             <div className="pick-grid">
               <button className="pick-card pick-cam" onClick={() => camRef.current?.click()}>
                 <span className="pick-icon">📷</span>
@@ -180,6 +228,11 @@ export default function ImportSheet({ open, onClose, goTab }) {
                 <b>粘贴文本</b>
                 <small>安卓本地 OCR 结果 / 手动清单</small>
               </button>
+              <button className="pick-card pick-doc" onClick={() => docRef.current?.click()}>
+                <span className="pick-icon">📄</span>
+                <b>文档导入</b>
+                <small>Word(.docx) / PDF / Excel / TXT</small>
+              </button>
             </div>
             <input
               ref={camRef} type="file" accept="image/*" capture="environment" hidden
@@ -188,6 +241,13 @@ export default function ImportSheet({ open, onClose, goTab }) {
             <input
               ref={fileRef} type="file" accept="image/*" hidden
               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) handleFile(f) }}
+            />
+            <input
+              ref={docRef}
+              type="file"
+              accept=".docx,.pdf,.xlsx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
+              hidden
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) handleDocument(f) }}
             />
           </div>
         )}
@@ -236,9 +296,15 @@ export default function ImportSheet({ open, onClose, goTab }) {
               )}
               {payload?.type === 'text' && (
                 <>
-                  <button className="btn btn-primary btn-block" onClick={() => { setPhase('pick'); setPickView('text') }}>
-                    修改文本重试
-                  </button>
+                  {mode === 'doc' ? (
+                    <button className="btn btn-primary btn-block" onClick={() => { setPhase('pick'); setPickView('main') }}>
+                      换一个文件重试
+                    </button>
+                  ) : (
+                    <button className="btn btn-primary btn-block" onClick={() => { setPhase('pick'); setPickView('text') }}>
+                      修改文本重试
+                    </button>
+                  )}
                   <button className="btn btn-ghost btn-block" onClick={degradeToLocal}>
                     仅存词形（不上传）
                   </button>

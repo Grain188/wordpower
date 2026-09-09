@@ -50,7 +50,7 @@
 .sheet-body { display: flex; flex-direction: column; gap: var(--space-3); }
 .sheet-sub { margin: 0; color: var(--text-sub); font-size: 13px; }
 
-/* 来源选择�?*/
+/* 来源选择 */
 .pick-grid { display: flex; flex-direction: column; gap: var(--space-3); }
 .pick-card {
   display: flex;
@@ -68,6 +68,7 @@
 .pick-card small { color: var(--text-sub); }
 .pick-cam { background: var(--tint-green); border-color: transparent; }
 .pick-paste { background: var(--tint-blue); border-color: transparent; }
+.pick-doc { background: var(--tint-yellow); border-color: transparent; }
 .pick-icon { font-size: 26px; margin-bottom: 4px; }
 
 /* busy */

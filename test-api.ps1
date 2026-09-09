@@ -36,7 +36,8 @@ if (-not $resolved) {
   Write-Error "Request body file not found: $BodyFile (create test-body.json next to this script)"
   exit 1
 }
-$body = Get-Content -Path $resolved -Raw
+# Force UTF-8 read (Windows PowerShell 5.1 defaults to ANSI/GBK and garbles Chinese bodies)
+$body = [System.IO.File]::ReadAllText($resolved.Path, [System.Text.Encoding]::UTF8)
 try { $null = $body | ConvertFrom-Json } catch {
   Write-Error "test-body.json is not valid JSON: $($_.Exception.Message)"
   exit 1

@@ -376,6 +376,10 @@ export async function getScenarioCache(groupKey) {
   return db.scenarioCache.where('groupKey').equals(groupKey).first()
 }
 
+export async function deleteScenarioCache(groupKey) {
+  return db.scenarioCache.where('groupKey').equals(groupKey).delete()
+}
+
 export async function putScenarioCache(groupKey, payload) {
   await db.scenarioCache.put({ groupKey, payload, createdAt: Date.now() })
   return payload

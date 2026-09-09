@@ -135,6 +135,18 @@ export default function ScenarioChat({ words, onClose, goTab }) {
     if (text) speakEnglish(text)
   }
 
+  function regenerate() {
+    setScenario(null)
+    setGenErr('')
+    setPhase('gen')
+    getOrCreateScenario(words, { force: true })
+      .then((s) => {
+        setScenario(s)
+        setPhase('intro')
+      })
+      .catch((e) => setGenErr(e?.message || '情景生成失败'))
+  }
+
   async function beginChat() {
     setPhase('chat')
     // NPC 开场白作为第一句 AI（自然示范首个目标词）
@@ -300,6 +312,7 @@ export default function ScenarioChat({ words, onClose, goTab }) {
           </div>
           <p className="sc-words-note">目标词：{norms.map((n) => n + (wordsMeta.get(n).meaningZh ? ` ${wordsMeta.get(n).meaningZh}` : '')).join(' · ')}</p>
           <button className="btn btn-primary btn-block" onClick={beginChat}>开始入戏</button>
+          <button className="btn btn-plain btn-block" onClick={regenerate}>🔄 换一个情景（重新生成）</button>
         </div>
       )}
 

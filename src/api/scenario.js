@@ -1,6 +1,6 @@
 // api/scenario.js —— 错词情景对话：情景卡生成（一次文本调用，按词组缓存）
 import { api, parseJsonContent, modelOf } from './client.js'
-import { getScenarioCache, putScenarioCache } from '../db/repo.js'
+import { getScenarioCache, putScenarioCache, deleteScenarioCache } from '../db/repo.js'
 import { normalizeWord } from '../lib/words.js'
 
 /** 情景卡生成输出上限（模型带 reasoning，需留思考链余量） */
@@ -17,17 +17,24 @@ export function scenarioGroupKey(words) {
     .join(',')
 }
 
-const GEN_PROMPT = (words) => `把以下英文生词编进一段连贯的生活情景剧情，用于"口语对演练习"（用户扮演当事人，AI 扮演 NPC）。
-生词：${JSON.stringify(words)}
+/** 生词带释义/词性给模型：让场景按"语义"构思而非泛泛 */
+const GEN_PROMPT = (words) => {
+  const list = words
+    .map((w) => `${w.word}（${w.meaningZh || '?'}${w.pos ? `，${w.pos}` : ''}）`)
+    .join('；')
+  return `把以下英文生词编进一段连贯的生活情景剧情，用于"口语对演练习"（用户扮演当事人，AI 扮演 NPC）。
+生词（含中文释义与词性，构思场景时请以它们的语义为准，选最贴切的地点/人物/事件，而不是套用通用场景）：
+${list}
 
 硬性要求：
-1. 必须把每个生词自然编进同一段连贯剧情（时间/地点/人物自洽，有起因经过冲突），严禁像清单一样罗列词汇。
-2. 场景优先职场/校园/日常社交等易代入情境。
-3. beats 数量 = 生词数量，每个词至少安排一次"必须由用户说出"的出场时机。
-4. opening_line 是 NPC 开场白，英文 ≤40 词，要自然带出第一个目标词。
+1. 必须让每个词在剧情里承担"符合它语义"的戏份（地点/道具/对白都从词义长出来），所有词编进同一段连贯剧情（时间/地点/人物自洽、有起因经过冲突），严禁像清单一样罗列。
+2. 明确角色扮演：为"你"和"NPC"各设一个有代入感的身份（职务/立场），让剧情围绕两人的目标与冲突推进。
+3. beats 数量 = 生词数量，每个词至少一次"必须由用户说出"的出场时机，节点与剧情因果相连。
+4. opening_line 是 NPC 开场白，英文 ≤40 词，自然带出第一个目标词。
 
-只输出 JSON：{"title":"中文情景标题","scene_brief_cn":"30 字中文剧情简介（开场播报用）","your_role":"用户角色(英文,如 a job candidate)","npc_role":"AI 角色(英文,如 a strict interviewer)","npc_persona":"NPC 人设一句话(英文,影响语气)","opening_line":"英文 ≤40 词开场白","target_words":["仅这 ${words.length} 个词，小写原形"],"beats":[{"beat_cn":"剧情节点中文","must_use":"该节点要用的词"}]}
+只输出 JSON：{"title":"中文情景标题（点出场景与冲突）","scene_brief_cn":"30 字中文剧情简介（开场播报用）","your_role":"用户角色(英文,如 a job candidate)","npc_role":"AI 角色(英文,如 a strict interviewer)","npc_persona":"NPC 人设一句话(英文,影响语气)","opening_line":"英文 ≤40 词开场白","target_words":["仅这 ${words.length} 个词，小写原形"],"beats":[{"beat_cn":"剧情节点中文","must_use":"该节点要用的词"}]}
 beats 长度必须等于 ${words.length}，must_use 覆盖全部 target_words。`
+}
 
 function sanitize(scenario, words) {
   const s = scenario || {}
@@ -55,7 +62,13 @@ async function generateScenario(words) {
         messages: [
           {
             role: 'user',
-            content: GEN_PROMPT(words.map((w) => w.word)),
+            content: GEN_PROMPT(
+              words.map((w) => ({
+                word: w.word,
+                meaningZh: w.meaningZh || '',
+                pos: w.pos || '',
+              }))
+            ),
           },
         ],
         json: false, // 容错解析（不用 json_object，个别模型会空）
@@ -73,27 +86,118 @@ async function generateScenario(words) {
   throw lastErr || new Error('情景卡生成失败')
 }
 
-/** 本地兜底情景卡：AI 不可用时也保证能用（模板化、可对话） */
+/** 语义场景表：AI 不可用时按词义（中文释义+词形）挑一个贴切场景，而不是万年咖啡馆 */
+const SCENE_THEMES = [
+  {
+    match: ['旅行', '旅游', '机场', '航班', '飞机', '酒店', '预订', '度假', '出差', '行李', '签证', '旅程', '码头', '火车'],
+    title: '机场出发 · 错词练习',
+    brief: '你在机场准备出发，和地勤核对行程，把生词自然聊进对话。',
+    you: 'a traveler checking in for a flight',
+    npc: 'the airport staff member',
+    persona: 'efficient but friendly',
+  },
+  {
+    match: ['工作', '职业', '面试', '会议', '办公室', '同事', '老板', '简历', '职位', '项目', '升职', '辞职', '加班', '团队', '任务'],
+    title: '入职第一课 · 错词练习',
+    brief: '你第一天到新部门报到，和负责人当面聊清任务与要求。',
+    you: 'a new employee on the first day',
+    npc: 'the team lead',
+    persona: 'busy, direct but fair',
+  },
+  {
+    match: ['学校', '大学', '学习', '考试', '课程', '作业', '老师', '学生', '课堂', '毕业', '论文', '图书馆', '读书', '笔记'],
+    title: '开学第一天 · 错词练习',
+    brief: '新学期刚开始，你和同桌/老师聊选课与学习安排。',
+    you: 'a student starting a new term',
+    npc: 'a friendly classmate',
+    persona: 'curious and encouraging',
+  },
+  {
+    match: ['购物', '商店', '买', '卖', '钱', '便宜', '贵', '价格', '打折', '付款', '收银', '结账', '商品'],
+    title: '血拼时刻 · 错词练习',
+    brief: '你在店里挑东西，和店员讨价还价、结账。',
+    you: 'a shopper with a budget',
+    npc: 'a shop assistant',
+    persona: 'polite but a little pushy',
+  },
+  {
+    match: ['食物', '吃', '喝', '餐厅', '饭店', '菜', '菜单', '点餐', '饿', '味道', '咖啡馆', '早餐', '晚餐'],
+    title: '点餐进行时 · 错词练习',
+    brief: '你第一次来这家店，和服务员点餐并确认细节。',
+    you: 'a customer ordering a meal',
+    npc: 'a waiter',
+    persona: 'cheerful, wants you to order quickly',
+  },
+  {
+    match: ['健康', '医生', '医院', '生病', '疼痛', '药', '锻炼', '身体', '感冒', '预约', '挂号', '治疗'],
+    title: '看医生 · 错词练习',
+    brief: '你不舒服去看医生，把症状和习惯讲清楚。',
+    you: 'a patient describing symptoms',
+    npc: 'the doctor',
+    persona: 'calm and reassuring',
+  },
+  {
+    match: ['银行', '账户', '贷款', '信用卡', '存钱', '取钱', '转账', '汇率', '存折'],
+    title: '银行办业务 · 错词练习',
+    brief: '你在银行窗口办一笔业务，和柜员核对信息。',
+    you: 'a customer at the bank counter',
+    npc: 'the bank clerk',
+    persona: 'formal but patient',
+  },
+]
+
+/** 本地兜底情景卡：AI 不可用时按词义挑场景（可对话），不再一律咖啡馆 */
 export function buildFallbackScenario(words) {
   const norms = words.map((w) => normalizeWord(w?.word))
   const first = norms[0] || 'conversation'
+  // 按"词+中文释义"里命中的关键词给每个主题打分
+  let best = null
+  let bestScore = 0
+  for (const t of SCENE_THEMES) {
+    let score = 0
+    for (const w of words) {
+      const text = `${w.word || ''} ${w.meaningZh || ''}`
+      if (t.match.some((k) => text.includes(k))) score++
+    }
+    if (score > bestScore) {
+      bestScore = score
+      best = t
+    }
+  }
+  const t = best || SCENE_THEMES[0]
+  if (!best) {
+    // 完全没命中 → 中性"新邻居"场景
+    return {
+      title: '错词练习小剧场',
+      scene_brief_cn: '你刚搬到新城市，一位老住户带你认路，边聊边把生词说出来。',
+      your_role: 'someone new in town',
+      npc_role: 'a friendly neighbor',
+      npc_persona: 'warm and talkative',
+      opening_line: `Hi there! You just moved in, right? I noticed you are practicing "${first}" — try to use it naturally while we chat.`,
+      target_words: norms,
+      beats: norms.map((w) => ({ beat_cn: `自然说出 ${w}`, must_use: w })),
+    }
+  }
   return {
-    title: '错词练习小剧场',
-    scene_brief_cn: '你与老友在咖啡馆重逢，聊起近况；把生词自然说进你们的对话。',
-    your_role: 'a friend catching up over coffee',
-    npc_role: 'an old friend',
-    npc_persona: 'warm and curious',
-    opening_line: `It has been months since we last met! I remember you were practicing "${first}" back then. How would you use it naturally today?`,
+    title: t.title,
+    scene_brief_cn: t.brief,
+    your_role: t.you,
+    npc_role: t.npc,
+    npc_persona: t.persona,
+    opening_line: `Hello! Let's take it step by step — and remember to use "${first}" naturally when you answer.`,
     target_words: norms,
     beats: norms.map((w) => ({ beat_cn: `自然说出 ${w}`, must_use: w })),
   }
 }
 
-/** 取情景卡：同一组词已生成过 → 直接返回缓存；AI 失败 → 本地兜底卡（不缓存，下次可再试 AI） */
-export async function getOrCreateScenario(words) {
+/** 取情景卡：同一组词已生成过 → 直接返回缓存；force=true 强制重生成；AI 失败 → 语义兜底卡（不缓存） */
+export async function getOrCreateScenario(words, { force = false } = {}) {
   const key = scenarioGroupKey(words)
-  const cached = await getScenarioCache(key)
-  if (cached?.payload) return cached.payload
+  if (force) await deleteScenarioCache(key).catch(() => {})
+  else {
+    const cached = await getScenarioCache(key)
+    if (cached?.payload) return cached.payload
+  }
   try {
     const scenario = await generateScenario(words)
     await putScenarioCache(key, scenario).catch(() => {})

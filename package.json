@@ -9,7 +9,7 @@
     "build": "vite build && node scripts/gen-sw.mjs",
     "preview": "vite preview",
     "icons": "node scripts/gen-icons.mjs",
-    "smoke": "node scripts/smoke-m1.mjs && node scripts/smoke-m2.mjs && node scripts/smoke-m3.mjs && node scripts/smoke-m6.mjs && node scripts/smoke-m8.mjs"
+    "smoke": "node scripts/smoke-m1.mjs && node scripts/smoke-m2.mjs && node scripts/smoke-m3.mjs && node scripts/smoke-m6.mjs && node scripts/smoke-m8.mjs && node scripts/smoke-scenario.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.5",
